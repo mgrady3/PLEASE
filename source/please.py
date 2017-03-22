@@ -33,7 +33,6 @@ from qthreads import WorkerThread
 from terminal import MessageConsole
 
 __Version = '1.0.0'
-__imgorder = 'row-major'  # pyqtgraph global setting
 
 
 class ExtendedCrossHair(QtCore.QObject):
