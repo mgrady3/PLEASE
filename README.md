@@ -20,19 +20,17 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
 
 #### The necessary infor for loading data is as follows:
 * Image parameters:
-        * Image Height [integer] 
-        * Image Width [integer]
-       
+  * Image Height [integer] 
+  * Image Width [integer]
 * Energy parameters (in eV):
-        * Starting Energy [single decimal float i.e. 2.0]
-        * Final Energy [single decimal float i.e. 2.0]
-        * Step Energy [single decimal float i.e. 2.0]
-
+  * Starting Energy [single decimal float i.e. 2.0]
+  * Final Energy [single decimal float i.e. 2.0]
+  * Step Energy [single decimal float i.e. 2.0]
 * Data parameters:
-        * Data Type [string] valid parameters are {"Image", "Raw"}
-        * File format [string] {".tif", ".png", ".dat"}
-        * Bit Depth (Required for loading raw data) [integer] valid parameters are {8, 16} for 8 and 16 bit data respectively
-        * Byte Order (Required for loading raw data) [string] {"L" for little endian, "B" for big endian}
-        * Data path [string pointing to folder containing data files]
+  * Data Type [string] valid parameters are {"Image", "Raw"}
+  * File format [string] {".tif", ".png", ".dat"}
+  * Bit Depth (Required for loading raw data) [integer] valid parameters are {8, 16} for 8 and 16 bit data respectively
+  * Byte Order (Required for loading raw data) [string] {"L" for little endian, "B" for big endian}
+  * Data path [string pointing to folder containing data files]
         
         
