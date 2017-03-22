@@ -1,10 +1,14 @@
 """
+PLEASE - The Python Low-energy Electron Analysis SuitE.
+
+Author: Maxwell Grady
+Affiliation: University of New Hampshire Department of Physics Pohl group
+Version 1.0.0
+Date: March, 2017
+
 Generic LEEM / LEED experiment object
 Used for serializing experiment data
 This makes it easier to load data from a previously analyzed experiment
-
-Author: Maxwell Grady
-Date: March 2016
 """
 import yaml
 import pprint
@@ -13,11 +17,13 @@ pp = pprint.PrettyPrinter(indent=4)
 
 
 class Experiment(object):
-    """
+    """Container object to hold Experiment Parameters.
 
+    These parameters are loaded from User created YAML config files.
     """
 
     def __init__(self):
+        """Initialize empty container object."""
         self._Test = False
         self.exists = True
         self.exp_type = ''
@@ -37,15 +43,17 @@ class Experiment(object):
         self.loaded_settings = None
 
     def toFile(self):
-        """
+        """Write experiment settings to a YAML config file.
 
-        :return:
+        To Be Implemented later.
+        :return: None
         """
         pass
 
     def fromFile(self, fl):
         """
-        Read in parameters from a YMAL file, fl
+        Read in parameters from a YMAL file.
+
         :param fl: string path to YAML file
         :return:
         """
@@ -83,9 +91,9 @@ class Experiment(object):
             print("Please refer to experiment.py docstrings for explanation of valid YAML parameter files.")
 
     def test_load(self):
-        """
-        Test Loading a pre-made file with hard coded path
-        :return:
+        """Test Loading a pre-made file with hard coded path.
+
+        :return: None
         """
         test_file = '/Users/Maxwell/Desktop/141020_03_LEEM-IV_50FOV.yaml'
         with open(test_file, 'r') as f:
@@ -93,9 +101,9 @@ class Experiment(object):
         self._Test = True
 
     def test_fill(self):
-        """
-        Test filling object attributes from YAML file
-        :return:
+        """Test filling object attributes from YAML file.
+
+        :return: None
         """
         if self.loaded_settings is not None and self._Test:
             try:

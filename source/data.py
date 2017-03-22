@@ -1,4 +1,11 @@
 """
+PLEASE - The Python Low-energy Electron Analysis SuitE.
+
+Author: Maxwell Grady
+Affiliation: University of New Hampshire Department of Physics Pohl group
+Version 1.0.0
+Date: March, 2017
+
 Module containing classes which act as containers for
 LEED and LEEM data sets. Each objects has a main data
 construct consisting of a 3d numpy array which is filled
@@ -9,18 +16,13 @@ Alongside the 3d numpy array there must be some type of list or
 container for energy parameters which corresponds directly to the
 third axis of the numpy array.
 """
-import os
-import numpy as np
-import LEEMFUNCTIONS as LF
 
 
 class LeedData(object):
-    """
-    Generic object to hold LEED Data and relevant variables
-    Data loading methods
-    """
+    """Generic object to hold LEED Data and relevant variables."""
 
     def __init__(self, br=20):
+        """Initialize LEEDData object."""
         self.dat3d = None  # placeholder for main data; overwritten on load
         self.elist = []  # list of energy values
         self.ilist = []
@@ -33,12 +35,10 @@ class LeedData(object):
 
 
 class LeemData(object):
-    """
-    Generic object to hold LEEM data and relevant variables
-    LEEM loading functions are already contained in LEEMFUNCTIONs.py
-    A this point I will not be porting them into the LeemData class
-    """
+    """Generic object to hold LEEM data and relevant variables."""
+
     def __init__(self):
+        """Initialize LEEDData object."""
         # Image Parameters
         self.ht = 0  # image height to be set by User
         self.wd = 0  # image width to be set by User

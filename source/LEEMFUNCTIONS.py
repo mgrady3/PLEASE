@@ -1,3 +1,16 @@
+"""
+PLEASE - The Python Low-energy Electron Analysis SuitE.
+
+Author: Maxwell Grady
+Affiliation: University of New Hampshire Department of Physics Pohl group
+Version 1.0.0
+Date: March, 2017
+
+Collection of methods for handling LEEM/LEED data
+These methods are independent of the GUI and thus not contained in please.py
+
+"""
+
 import os
 import numpy as np
 from PIL import Image
@@ -9,7 +22,10 @@ DEF_IMHEAD = 520
 
 
 class ParseError(Exception):
+    """Custom exception for errors encountered while parsing TIFF file headers."""
+
     def __init__(self, message, errors):
+        """."""
         super(ParseError, self).__init__(message)
         # TODO: implement this later ...
         self.errors = errors
@@ -17,8 +33,8 @@ class ParseError(Exception):
 
 
 def filenumber_to_energy(el, im):
-    """
-    Convert filenumber to energy in eV
+    """Convert filenumber to energy in eV.
+
     :argument el: list of energy values in eV in single decimal format
     :argument im: integer image file number in range 0 to self.LEEM_numfiles
     :return el[im]: energy value in single decimal format corresponding to file number im
@@ -33,8 +49,8 @@ def filenumber_to_energy(el, im):
 
 
 def energy_to_filenumber(el, val):
-    """
-    Convert energy value in eV to image file number
+    """Convert energy value in eV to image file number.
+
     :argument el: list of energy values in eV in single decimal format
     :argument val: single decimal float representing an electron energy in eV
     :return el.index(val): integer filenumber corresponding to the energy val
@@ -47,11 +63,7 @@ def energy_to_filenumber(el, val):
 
 
 def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte='L'):
-    """
-    read in all .dat files in current data directory
-    process each .dat file into a numpy array
-    stack arrays atop each other
-    return 3d-numpy array to self.data_3d
+    """Read in .dat files, convert to numpy arrays, then stack into 3D numpy array and return.
 
     :argument dirname: string path to current data directory
     :param ht: integer pixel height of image
@@ -113,9 +125,10 @@ def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte='L'):
     # print('Returning New Array Shape: {}'.format(dat_arr.shape))
     return dat_arr
 
+
 def smooth(inpt, window_len=10, window_type='flat'):
-    """
-    Smoothing function based on Scipy Cookbook recipe for data smoothing
+    """Smoothing function based on Scipy Cookbook recipe for data smoothing.
+
     Uses predefined window function (selectable) to smooth a 1D data set
     Computes the convolution with a normalized window
 
@@ -133,7 +146,7 @@ def smooth(inpt, window_len=10, window_type='flat'):
         return
 
     # window_type = 'hanning'
-    if not window_type in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+    if window_type not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         print('Error - Invalid window_type')
         return
 
@@ -157,8 +170,8 @@ def smooth(inpt, window_len=10, window_type='flat'):
 
 
 def crop_images(data, indices):
-    """
-    Crop images based on the indices specified
+    """Crop images based on the indices specified.
+
     :param data: 3d numpy array of images
     :param indices: list of two tuples in (r,c) format 1st = top left corner 2nd = bottom right
     :return: 3d numpy slice of original array based on given inputs
@@ -168,8 +181,8 @@ def crop_images(data, indices):
 
 
 def get_img_array(path, ext=None, swap=False):
-    """
-    Generate a 3d numpy array of gray-scale image files
+    """Generate a 3d numpy array of gray-scale image files.
+
     :param path: path to image files
     :param ext: file extension, default None for raw (.dat) data (not yet implemented)
     :param swap: boolean to swap the byte order of the array; default False
@@ -221,10 +234,11 @@ def get_img_array(path, ext=None, swap=False):
 
 
 def read_img(path):
-        """
-        Use PIL to open an image file, convert to greyscale and output a 2D numpy array.
+        """Use PIL to open an image file, convert to greyscale and output a 2D numpy array.
+
         In principle should work for .tif, .png, .jpg,
         and possibly anything else supported by Image.open().
+
         :param path: path to image to be opened
         :return:
         """
@@ -264,8 +278,8 @@ def read_img(path):
 
 
 def parse_tiff_header(img, w, h, byte_depth):
-    """
-    try to find byte order in tiff header info
+    """Try to find byte order in tiff header info.
+
     :param img: string path to file to examine
     :param w: img width
     :param h: imh height
@@ -283,14 +297,13 @@ def parse_tiff_header(img, w, h, byte_depth):
 
             f.seek(0)
             header_data = f.read()[0:header+1]
-            f.seek(0)
-            data = f.read()[header:]
 
-    except FileNotFoundError:
+    except IOError:
         print("Error: File {0} not found in current directory.".format(img))
 
     if not header_data:
-        raise ParseError(message="No Header Information Found; Check for correct Image Width, Height and Bit Depth", errors=None)
+        raise ParseError(message="No Header Information Found; Check for correct Image Width, Height and Bit Depth",
+                         errors=None)
     # TODO: the decoding of bytes using UTF-8 could be troublesome in the future ...
     # Perhaps its best here to have some sort of User configurable data encoding setting
     # For now that is beyond the scope of the current development
@@ -305,16 +318,18 @@ def parse_tiff_header(img, w, h, byte_depth):
             # in py3, byte_order will be read as b'MM' which needs to be decoded before comparison
             return 'L'
         else:
-            raise ParseError(message="Unknown byte order in first two bytes of TIFF file.", errors={byte_order: byte_order})
+            raise ParseError(message="Unknown byte order in first two bytes of TIFF file.",
+                             errors={byte_order: byte_order})
 
     else:
-        raise ParseError(message="Header Length too short; Need at least two bytes to read correct byte order.", errors=None)
+        raise ParseError(message="Header Length too short; Need at least two bytes to read correct byte order.",
+                         errors=None)
 
 
 def gen_dat_files(dirname=None, outdirname=None, ext=None,
                   w=None, h=None, byte_depth=None):
-    """
-    Given a directory with image files, output raw binary files with no header
+    """Given a directory with image files, output raw binary files with no header.
+
     :param dirname: string path to directory containing image files
     :param outdirname: string path to directory to output raw .dat files
     :param w: img width
@@ -345,7 +360,7 @@ def gen_dat_files(dirname=None, outdirname=None, ext=None,
             print(e.message)
             print(e.errors)
             byte_order = 'B'  # default to big endian
-        except FileNotFoundError as ef:
+        except IOError as ef:
             print(ef)  # TODO: figure out whats best practice here ...
             byte_order = 'B'  # default to big endian
     else:
@@ -364,7 +379,7 @@ def gen_dat_files(dirname=None, outdirname=None, ext=None,
             f.seek(0)
             # generate numpy friendly data format string: ex. '<u2' = little endian, unsigned integer, 2 bytes per pixel
             fmtstr = byte_order + 'u' + str(byte_depth)
-            data = np.fromstring(f.read()[header:], fmtstr).reshape((h,w))  # strip header information
+            data = np.fromstring(f.read()[header:], fmtstr).reshape((h, w))  # strip header information
             with open(os.path.join(outdirname, file.split('.')[0]+'.dat'), 'wb') as o:
                 data.tofile(o)  # store image data as raw binary file
     print("Done outputting dat files ...")
@@ -372,8 +387,8 @@ def gen_dat_files(dirname=None, outdirname=None, ext=None,
 
 
 def parse_dir(dirname):
-    """
-    Hack to remove '/path/to/folder/untitled/' error from QTFileDialog where /untitled/ gets appended by default
+    """Hack to remove '/path/to/folder/untitled/' error from QTFileDialog where /untitled/ gets appended by default.
+
     This happens when you select OK in in the getExistingDirectory dialog without manually selecting a directory
     Essentially you want to say OK to the default directory but for some reason /untitled/ gets added to the path
 
@@ -384,13 +399,10 @@ def parse_dir(dirname):
         x = '/User/Test/Desktop/'
         y = '/User/Test/untitled/Desktop/'
         z = '/untitled/User/Test/Desktop/'
-
         all will return the string '/User/Test/Desktop'
-
     :Note: If this will cause problems if the User actually has data stored in a path with a folder
-           called untitled intentionally
+           called 'untitled' intentionally
     """
-
     splt = dirname.split('/')
 
     # error happens by appending /untitled/ to path

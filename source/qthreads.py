@@ -1,13 +1,18 @@
 """
-Define sub-class/sub-classes of QThread
-these define a model for worker threads.
-The main thread responsible for GUI work
-can then start a worker thread to do a
-computationally intensive task or an I/O
-bound task without blocking usage of the UI.
+PLEASE - The Python Low-energy Electron Analysis SuitE.
+
+Author: Maxwell Grady
+Affiliation: University of New Hampshire Department of Physics Pohl group
+Version 1.0.0
+Date: March, 2017
+
+Define sub-class/sub-classes of QThread to define a model for worker threads.
+The main thread responsible for GUI work can then start a worker thread to do a
+computationally intensive task or an I/O bound task without blocking usage of the UI.
+
 Common tasks for the worker thread will be:
-    Loading raw data files from disk to
-    memory
+    Loading raw data files from disk to memory
+    Loading image files from disk to memory
     Outputting IV-data to text files(s)
 """
 
@@ -15,20 +20,27 @@ import os
 import LEEMFUNCTIONS as LF
 import numpy as np
 # from detect_peaks import detect_peaks as dp
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore
 
 # TODO: Consider splitting to multiple classes for separate tasks
+
+
 class WorkerThread(QtCore.QThread):
-    """
-    Worker Thread to execute specific tasks which
-    may otherwise block the main UI
-    task: string describing task to be completed by worker thread
-    kwargs:
+    """Worker Thread to execute specific tasks which may otherwise block the main UI."""
+
+    # Pyqt5 Signals must be declared at class level
+    done = QtCore.pyqtSignal()
+    outputSIGNAL = QtCore.pyqtSignal(np.ndarray)
+
+    def __init__(self, task=None, **kwargs):
+        """Initialize QThread with required parameters.
+
+        :param: task: string describing task to be completed by worker thread
+        :kwargs:
         path: string path to data to load or directory to output into
         data: numpy array of data to perform a calculation on or output to text
         ilist: list of intensity values to output to text
-        elist: list of energy values in eV in single decimal format to be used for
-                calculations or for outputting to text
+        elist: list of energy values (eV) in single decimal format to be used for calculations or for outputting to text
         imht: integer image height dimension
         imwd: integer image width dimension
         name: string name for output file when saving I(V) data to text
@@ -37,13 +49,7 @@ class WorkerThread(QtCore.QThread):
         byte: string 'L or 'B' denoting endian-ness of data
         outpath: string path to directory in which to output .dat files
         files: list of strings of file names to be output as raw data to outpath
-    """
-
-    # Pyqt5 Signals must be declared at class level
-    done = QtCore.pyqtSignal()
-    outputSIGNAL = QtCore.pyqtSignal(np.ndarray)
-
-    def __init__(self, task=None, **kwargs):
+        """
         super(WorkerThread, self).__init__()
         self.task = task
         # Get parameters as dictionary and validate against keys
@@ -63,15 +69,14 @@ class WorkerThread(QtCore.QThread):
     # Work has been started in git branch dev_updateThreading0
 
     def connectOutputSignal(self, slot):
-        """
-        callable from gui.py to connect the outputSIGNAL to various slots
-        """
+        """Callable from gui.py to connect the outputSIGNAL to various slots."""
         self.outputSIGNAL.connect(slot)
 
     def run(self):
-        """
+        """Call method to do work depending on self.task.
+
         # Overload the QThread run() method to do specific tasks
-        :return none:
+        :return: None
         """
         if self.task is None:
             print('Terminating - No task to execute ...')
@@ -124,15 +129,15 @@ class WorkerThread(QtCore.QThread):
             self.exit()
 
     def load_LEED(self):
-        """
-        Load raw binary LEED-IV data to a 3d numpy array
-        emit the numpy array as a custom SIGNAL to be retrieved in gui.py
-        :return:
+        """Load raw binary LEED-IV data to a 3d numpy array.
+
+        Emit the numpy array as a custom SIGNAL to be retrieved in please.py
+        :return: None
         """
         # requires params: path, imht, imwd
-        if ( 'path' not in self.params.keys() or
-             'imht' not in self.params.keys() or
-             'imwd' not in self.params.keys()):
+        if ('path' not in self.params.keys() or
+           ('imht' not in self.params.keys()) or
+           ('imwd' not in self.params.keys())):
 
             print('Terminating - ERROR: incorrect parameters for LOAD task')
             print('Required Parameters: path, imht, imwd')
@@ -168,13 +173,13 @@ class WorkerThread(QtCore.QThread):
             self.outputSIGNAL.emit(dat_3d)  # type: np.ndarray
 
     def load_LEED_Images(self):
-        """
-        Load LEED data from image files
+        """Load LEED data from image files.
+
         Supported formats are TIFF, PNG, JPG
-        emit the 3d data array as a custom SIGNAL to be retrieved in gui.py
+        Emit the 3d data array as a custom SIGNAL to be retrieved in please.py
         """
         if ('path' not in self.params.keys() or
-            'ext' not in self.params.keys()):
+           ('ext' not in self.params.keys())):
             print('Terminating - ERROR: incorrect parameters for LOAD task')
             print('Required Parameters: path, ext')
         print('Loading LEED Data from Images via QThread ...')
@@ -207,15 +212,15 @@ class WorkerThread(QtCore.QThread):
             self.outputSIGNAL.emit(data)  # type: np.ndarray
 
     def load_LEEM(self):
-        """
-        Load raw binary LEEM-IV data to a 3d numpy array
-        emit the numpy array as a custom SIGNAL to be retrieved in gui.py
-        :return:
+        """Load raw binary LEEM-IV data to a 3d numpy array.
+
+        Emit the numpy array as a custom SIGNAL to be retrieved in gui.py
+        :return: None
         """
         # requires params: path, imht, imwd
-        if ( 'path' not in self.params.keys() or
-             'imht' not in self.params.keys() or
-             'imwd' not in self.params.keys()):
+        if ('path' not in self.params.keys() or
+           ('imht' not in self.params.keys()) or
+           ('imwd' not in self.params.keys())):
 
             print('Terminating - ERROR: incorrect parameters for LOAD task')
             print('Required Parameters: path, imht, imwd')
@@ -252,10 +257,13 @@ class WorkerThread(QtCore.QThread):
             self.outputSIGNAL.emit(dat_3d)  # type: np.ndarray
 
     def load_LEEM_Images(self):
-        """
+        """Load LEEM data from image files.
+
+        Supported formats are TIFF, PNG, JPG
+        Emit the 3d data array as a custom SIGNAL to be retrieved in please.py
         """
         if ('path' not in self.params.keys() and
-                    'ext' not in self.params.keys()):
+           ('ext' not in self.params.keys())):
             print('Terminating - ERROR: incorrect parameters for LOAD task')
             print('Required Parameters: path, ext')
         print('Loading LEEM Data from Images via QThread ...')
@@ -282,8 +290,9 @@ class WorkerThread(QtCore.QThread):
             self.outputSIGNAL.emit(data)  # type: np.ndarray
 
     def output_to_Text(self):
-        """
-        :return:
+        """Output LEEM or LEED I(V) data to tab delimited text file.
+
+        :return: None
         """
         # requires params: path, ilist, elist, name
         filename = self.params['name']
@@ -297,6 +306,10 @@ class WorkerThread(QtCore.QThread):
                 f.write(str(item) + '\t' + str(ilist[index]) + '\n')
 
     def smooth(self):
+        """Smooth 3D numpy array along the vertical (energy) axis.
+
+        Note- This is a long running task.
+        """
         if 'data' not in self.params.keys():
             print('Terminating - ERROR: incorrect parameters for smooth task')
             print('Required Parameters: data - 3d numpy array')
@@ -306,8 +319,9 @@ class WorkerThread(QtCore.QThread):
         self.outputSIGNAL.emit(smth)  # type: np.ndarray
 
     def gen_Dat_Files(self):
-        """
-        :return:
+        """Generate raw .dat files from LEEM or LEED image files.
+
+        :return: None
         """
         # requires:
         # path - input path

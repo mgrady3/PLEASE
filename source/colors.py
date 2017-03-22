@@ -3,7 +3,7 @@
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: February, 2017
+Date: March, 2017
 
 Contained here are color definitions for use in color coding plots to
 user selected areas in LEEM and LEED images.
