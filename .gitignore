@@ -1,0 +1,30 @@
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Deprecated Test Files #
+#########################
+smooth_profile.py
+liveview.py
+datapath.txt
+
+# Python Interpreter Generated Files #
+######################################
+*.py[cod]
+
+# IDE files #
+#############
+.idea
+
+# Build/Deploy files #
+######################
+./test-deploy/
+
+# Pycache in sourc e#
+./source/__pycache__/
