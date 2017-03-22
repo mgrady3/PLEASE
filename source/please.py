@@ -817,6 +817,11 @@ class Viewer(QtWidgets.QWidget):
     def update_LEEM_img_after_load(self):
         """Called upon data loading I/O thread emitting finished signal."""
         # print("QThread has finished execution ...")
+
+        # Check that data was actually loaded
+        if self.leemdat.dat3d is None:
+            return
+
         if self.hasdisplayedLEEMdata:
             self.LEEMimageplotwidget.getPlotItem().clear()
 
@@ -853,6 +858,11 @@ class Viewer(QtWidgets.QWidget):
         """Called upon data loading I/O thread emitting finished signal."""
         # if self.hasdisplayedLEEDdata:
         #     self.LEEDimageplotwidget.getPlotItem().clear()
+
+        # check that data was actually loaded
+        if self.leeddat.dat3d is None:
+            return
+
         self.curLEEDIndex = self.leeddat.dat3d.shape[2]//2
         self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[:,
                                                          :,

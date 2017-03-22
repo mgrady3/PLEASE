@@ -21,7 +21,7 @@ class LeedData(object):
     """
 
     def __init__(self, br=20):
-        self.dat_3d = np.zeros((10, 10, 10))  # placeholder for main data
+        self.dat3d = None  # placeholder for main data; overwritten on load
         self.elist = []  # list of energy values
         self.ilist = []
         self.data_dir = ''  # placeholder for path to currently stored data
@@ -44,14 +44,14 @@ class LeemData(object):
         self.wd = 0  # image width to be set by User
         self.hdln = 0  # image header length to be set by User
         # Data
-        self.dat_3d = np.zeros((10, 10, 10))  # placeholder for main data
+        self.dat3d = None  # placeholder for main data; overwritten on load
         self.elist = []  # list of energy values
         self.ilist = []
         self.e_step = 0
         # Directories and Image index
         self.data_dir = ''
         self.img_mask_count_dir = ''
-        self.curimg = 0  # correspondent to third axis of self.dat_3d
+        self.curimg = 0  # correspondent to third axis of self.dat3d
         # Coordinates for I(V) data
         self.curX = 0
         self.curY = 0

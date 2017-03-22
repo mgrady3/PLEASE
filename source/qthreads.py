@@ -96,7 +96,7 @@ class WorkerThread(QtCore.QThread):
         elif self.task == 'LOAD_LEEM_IMAGES':
             self.load_LEEM_Images()
             self.quit()
-            self.exit() # restrict action to one task
+            self.exit()  # restrict action to one task
 
         elif self.task == 'OUTPUT_TO_TEXT':
             self.output_to_Text()
@@ -147,17 +147,25 @@ class WorkerThread(QtCore.QThread):
             self.params['byte'] = 'L'  # default to Little Endian
 
         # load raw data
-        dat_3d = LF.process_LEEM_Data(dirname=self.params['path'],
-                                      ht=self.params['imht'],
-                                      wd=self.params['imwd'],
-                                      bits=self.params['bits'],
-                                      byte=self.params['byte'])
-
-        # emit output signal with np array as generic pyobject type
-        # Old way:
-        # self.emit(QtCore.SIGNAL('output(PyQt_PyObject)'), dat_3d)
-        # New Way:
-        self.outputSIGNAL.emit(dat_3d) # type: np.ndarray
+        dat_3d = None
+        try:
+            dat_3d = LF.process_LEEM_Data(dirname=self.params['path'],
+                                          ht=self.params['imht'],
+                                          wd=self.params['imwd'],
+                                          bits=self.params['bits'],
+                                          byte=self.params['byte'])
+        except IOError as e:
+            print("Error Loading LEED Data:")
+            print(e)
+            print("LEED data files not found in directory specified in YAML experiment config file.")
+            print("Please re-check the settings in your YAML experiment config file.")
+            print("Ensure that the path setting points to the correct directory.")
+            return
+        if dat_3d is None:
+            self.quit()
+            self.exit()
+        else:
+            self.outputSIGNAL.emit(dat_3d)  # type: np.ndarray
 
     def load_LEED_Images(self):
         """
@@ -182,15 +190,21 @@ class WorkerThread(QtCore.QThread):
                 swap = False
                 print("Error reading byte order from experimental config ...")
         """
-        data = LF.get_img_array(self.params['path'], ext=self.params['ext'], swap=False)
+        data = None
+        try:
+            data = LF.get_img_array(self.params['path'], ext=self.params['ext'], swap=False)
+        except IOError as e:
+            print("Error Loading LEED Images:")
+            print(e)
+            print("LEED image files not found in directory specified in YAML experiment config file.")
+            print("Please re-check the settings in your YAML experiment config file.")
+            print("Ensure that the path setting points to the correct directory.")
+            return
         if data is None:
             self.quit()
             self.exit()
         else:
-            # Old way:
-            # self.emit(QtCore.SIGNAL('output(PyQt_PyObject)'), data)
-            # New Way:
-            self.outputSIGNAL.emit(data) # type: np.ndarray
+            self.outputSIGNAL.emit(data)  # type: np.ndarray
 
     def load_LEEM(self):
         """
@@ -216,17 +230,26 @@ class WorkerThread(QtCore.QThread):
             self.params['byte'] = 'L'  # default to Little Endian
 
         # load raw data
-        dat_3d = LF.process_LEEM_Data(dirname=self.params['path'],
-                                      ht=self.params['imht'],
-                                      wd=self.params['imwd'],
-                                      bits=self.params['bits'],
-                                      byte=self.params['byte'])
+        dat_3d = None
+        try:
+            dat_3d = LF.process_LEEM_Data(dirname=self.params['path'],
+                                          ht=self.params['imht'],
+                                          wd=self.params['imwd'],
+                                          bits=self.params['bits'],
+                                          byte=self.params['byte'])
+        except IOError as e:
+            print("Error Loading LEEM Data:")
+            print(e)
+            print("LEEM data files not found in directory specified in YAML experiment config file.")
+            print("Please re-check the settings in your YAML experiment config file.")
+            print("Ensure that the path setting points to the correct directory.")
+            return
 
-        # emit output signal with np array as generic pyobject type
-        # Old way:
-        # self.emit(QtCore.SIGNAL('output(PyQt_PyObject)'), dat_3d)
-        # New Way:
-        self.outputSIGNAL.emit(dat_3d) # type: np.ndarray
+        if dat_3d is None:
+            self.quit()
+            self.exit()
+        else:
+            self.outputSIGNAL.emit(dat_3d)  # type: np.ndarray
 
     def load_LEEM_Images(self):
         """
@@ -236,23 +259,27 @@ class WorkerThread(QtCore.QThread):
             print('Terminating - ERROR: incorrect parameters for LOAD task')
             print('Required Parameters: path, ext')
         print('Loading LEEM Data from Images via QThread ...')
+        data = None
         try:
             data = LF.get_img_array(self.params['path'],
                                     ext=self.params['ext'])
         except IOError as e:
+            print("Error Loading LEEM Experiment:")
             print(e)
-            print('Error occurred while loading LEEM data from images using a QThread')
+            print("LEEM data files not found in directory specified in YAML experiment config file.")
+            print("Please re-check the settings in your YAML experiment config file.")
+            print("Ensure that the path setting points to the correct directory.")
             return
         except ValueError as e:
             print(e)
             print('Error occurred while loading LEEM data from images using a QThread')
             return
 
-        # emit output signal with np array as generic pyobject type
-        # Old way:
-        # self.emit(QtCore.SIGNAL('output(PyQt_PyObject)'), data)
-        # New Way:
-        self.outputSIGNAL.emit(data) # type: np.ndarray
+        if data is None:
+            self.quit()
+            self.exit()
+        else:
+            self.outputSIGNAL.emit(data)  # type: np.ndarray
 
     def output_to_Text(self):
         """
