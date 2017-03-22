@@ -178,6 +178,7 @@ class Viewer(QtWidgets.QWidget):
         can be accessed.
         """
         self.staticLEEMplot = pg.PlotWidget()  # not displayed until User clicks LEEM image
+        self.staticLEEMplot.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
         # container for circular patches indicating locations of User clicks in LEEM image
         self.LEEMcircs = []
