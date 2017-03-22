@@ -1,8 +1,17 @@
 """
+PLEASE - The Python Low-energy Electron Analysis SuitE.
+
+Author: Maxwell Grady
+Affiliation: University of New Hampshire Department of Physics Pohl group
+Version 1.0.0
+Date: March, 2017
+
 Entrypoint for PLEASE.
 
 Usage:
     python /path/to/main.py
+
+    This will load the application and instantiate the GUI.
 """
 # Stdlib and Scientific Stack imports
 import os
