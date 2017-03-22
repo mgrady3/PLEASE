@@ -13,16 +13,11 @@ sets and providing an easy popint and click method for extracting I(V) curves.
 Analysis of LEEM-I(V) and LEED-I(V) data sets provides inisght with atomic
 scale resolution to the surface structure of a wide array of materials from
 semiconductors to metals in bulk or thin film as well as single layer 2D materials.
-
-Usage:
-    python please.py
-    This will enter the prgram via the main() method found in this file.
 """
 
 # Stdlib and Scientific Stack imports
 import os
 import sys
-import traceback
 import yaml
 import numpy as np
 import pyqtgraph as pg
@@ -1157,47 +1152,3 @@ class Viewer(QtWidgets.QWidget):
         if idx not in range(self.leeddat.dat3d.shape[2] - 1):
             return
         self.LEEDimage.setImage(self.leeddat.dat3d[:, :, idx])
-
-
-def custom_exception_handler(exc_type, exc_value, exc_traceback):
-    """Allow printing of unhandled exceptions instead of Qt Abort."""
-    if issubclass(exc_type, KeyboardInterrupt):
-        QtWidgets.QApplication.instance().quit()
-
-    print("".join(traceback.format_exception(exc_type,
-                                             exc_value,
-                                             exc_traceback)))
-
-
-def main():
-    """Start Qt Event Loop and display main window."""
-    # print("Welcome to PLEASE. Installing Custom Exception Handler ...")
-    sys.excepthook = custom_exception_handler
-    # print("Initializing Qt Event Loop ...")
-    app = QtWidgets.QApplication(sys.argv)
-
-    # pyqtgraph settings
-    pg.setConfigOption('imageAxisOrder', __imgorder)
-
-    # print("Creating Please App ...")
-    mw = MainWindow(v=__Version)
-    mw.showMaximized()
-
-    # This is a big fix for PyQt5 on macOS
-    # When running a PyQt5 application that is not bundled into a
-    # macOS app bundle; the main menu will not be clickable until you
-    # switch to another application then switch back.
-    # Thus to fix this we execute a quick applescript from the file
-    # cmd.scpt which automates the keystroke "Cmd+Tab" twice to swap
-    # applications then immediately swap back and set Focus to the main window.
-    if "darwin" in sys.platform:
-        cmd = """osascript cmd.scpt"""
-        os.system(cmd)
-        os.system(cmd)
-        mw.viewer.setFocus()
-
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
