@@ -24,9 +24,9 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
         * Image Width [integer]
        
 * Energy parameters (in eV):
-        * Starting Energy [single decimal float i.e. 2.0] 
-        * Final Energy [single decimal float i.e. 2.0] 
-        * Step Energy [single decimal float i.e. 2.0] 
+        * Starting Energy [single decimal float i.e. 2.0]
+        * Final Energy [single decimal float i.e. 2.0]
+        * Step Energy [single decimal float i.e. 2.0]
 
 * Data parameters:
         * Data Type [string] valid parameters are {"Image", "Raw"}
