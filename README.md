@@ -30,7 +30,7 @@ For LEED data, the data extraction is a bit more complex but still very straight
 
 Since LEEM and LEED data sets are collected with a wide range of experimental parameters, PLEASE provides an easy method for working with multiple data sets. Rather than having to input the experimental parameters each time data is loaded for analysis, the parameters are stored in a human readable structured text file using the YAML format. An example configuration file is provided with this source code. To setup a new data set for analysis, all that must be done is create a copy of the configuration template and fill in the required parameters. PLEASE can then load the experiment settings from the file and then load the data files accordingly.
 
-#### The necessary infor for loading data is as follows:
+#### The necessary info for loading data is as follows:
 * Image parameters:
   * Image Height [integer]
   * Image Width [integer]
