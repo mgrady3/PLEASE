@@ -455,6 +455,7 @@ class Viewer(QtWidgets.QWidget):
         sigmcLEED = self.LEEDimage.scene().sigMouseClicked
         sigmcLEED.connect(self.handleLEEDClick)
 
+    @staticmethod
     def h_line(self):
         """Convienience to quickly add UI separators."""
         f = QtWidgets.QFrame()
@@ -462,14 +463,15 @@ class Viewer(QtWidgets.QWidget):
         f.setFrameShadow(QtWidgets.QFrame.Sunken)
         return f
 
-    def v_line(self):
+    @staticmethod
+    def v_line():
         """Convienience to quickly add UI separators."""
         f = QtWidgets.QFrame()
         f.setFrameShape(QtWidgets.QFrame.VLine)
         f.setFrameShadow(QtWidgets.QFrame.Sunken)
         return f
 
-    def load_experiment(self):
+    def load_experiment():
         """Query User for YAML config file to load experiment settings.
 
         Adapted from my other project https://www.github.com/mgrady3/pLEASE
