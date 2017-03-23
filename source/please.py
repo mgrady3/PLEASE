@@ -253,6 +253,9 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMivplotwidget.setLabel('left',
                                        'Intensity', units='arb units',
                                        **self.labelStyle)
+        yaxis = self.LEEMivplotwidget.getAxis("left")
+        # y axis is 'arbitrary units'; we don't want kilo or mega arbitrary units etc...
+        yaxis.enableAutoSIPrefix(False)
 
         self.LEEMimageplotwidget.addItem(self.LEEMimage)
         ivvbox.addWidget(self.LEEMivplotwidget)
@@ -432,6 +435,10 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDivplotwidget.setLabel('left',
                                        'Intensity', units='arb units',
                                        **self.labelStyle)
+        yaxis = self.LEEDivplotwidget.getAxis("left")
+        # y axis is 'arbitrary units'; we don't want kilo or mega arbitrary units etc...
+        yaxis.enableAutoSIPrefix(False)
+
         self.ivvbox.addWidget(self.LEEDivplotwidget)
         self.LEEDTabLayout.addLayout(self.ivvbox)
         self.LEEDTab.setLayout(self.LEEDTabLayout)
