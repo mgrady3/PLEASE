@@ -456,7 +456,7 @@ class Viewer(QtWidgets.QWidget):
         sigmcLEED.connect(self.handleLEEDClick)
 
     @staticmethod
-    def h_line(self):
+    def h_line():
         """Convienience to quickly add UI separators."""
         f = QtWidgets.QFrame()
         f.setFrameShape(QtWidgets.QFrame.HLine)
