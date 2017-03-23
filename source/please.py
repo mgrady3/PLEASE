@@ -119,6 +119,10 @@ class MainWindow(QtWidgets.QMainWindow):
         clearLEEMAction.triggered.connect(self.viewer.clearLEEMIV)
         LEEMMenu.addAction(clearLEEMAction)
 
+        toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
+        toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
+        LEEMMenu.addAction(toggleLEEMReflectivityAction)
+
         # LEED menu
         extractAction = QtWidgets.QAction("Extract I(V)", self)
         # extractAction.setShortcut("Ctrl-E")
@@ -128,6 +132,10 @@ class MainWindow(QtWidgets.QMainWindow):
         clearAction = QtWidgets.QAction("Clear I(V)", self)
         clearAction.triggered.connect(self.viewer.clearLEEDIV)
         LEEDMenu.addAction(clearAction)
+
+        toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
+        toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
+        LEEDMenu.addAction(toggleLEEDReflectivityAction)
 
         # Help menu
         genConfigInfoFileAction = QtWidgets.QAction("Generate User Config File", self)
@@ -209,6 +217,10 @@ class Viewer(QtWidgets.QWidget):
         self.exp = None  # overwritten on load with Experiment object
         self.hasdisplayedLEEMdata = False
         self.hasdisplayedLEEDdata = False
+
+        # flags for plotting reflectivty rathet than intensity
+        self.rescaleLEEMIntensity = False
+        self.rescaleLEEDIntensity = False
         self.curLEEMIndex = 0
         self.curLEEDIndex = 0
         dummydata = np.zeros((10, 10))
@@ -773,6 +785,16 @@ class Viewer(QtWidgets.QWidget):
             self.leemdat.posMask.fill(0)
         return
 
+    def toggleReflectivity(self, data=None):
+        """Swap boolean flag for plotting Reflectivity instead of Intensity."""
+        if data is None:
+            return
+        if data == "LEEM":
+            self.rescaleLEEMIntensity = not self.rescaleLEEMIntensity
+            self.LEEMivplotwidget.setLabel("left", "Reflectivity")
+        if data == "LEED":
+            pass  # TODO: decide if we want this as a feature
+
     @QtCore.pyqtSlot()
     def smoothing_statechange(self, data=None):
         """Toggle LEED smoothing option."""
@@ -1005,6 +1027,8 @@ class Viewer(QtWidgets.QWidget):
         # update IV plot
         xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]  # raw unsmoothed data
+        if self.rescaleLEEMIntensity:
+            ydata = [point/float(max(ydata)) for point in ydata]
         if self.smoothLEEMplot and not self.leemdat.posMask[ymp, xmp]:
             # We want to plot smoothed dat but the I(V) of the current pixel position
             # has not yet been smoothed
