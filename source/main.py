@@ -60,7 +60,10 @@ def main():
     # cmd.scpt which automates the keystroke "Cmd+Tab" twice to swap
     # applications then immediately swap back and set Focus to the main window.
     if "darwin" in sys.platform:
-        cmd = """osascript cmd.scpt"""
+        import please
+        sourcepath = os.path.dirname(please.__file__)
+        cmdpath = os.path.join(sourcepath, 'cmd.scpt')
+        cmd = """osascript {0}""".format(cmdpath)
         os.system(cmd)
         os.system(cmd)
         mw.viewer.setFocus()
