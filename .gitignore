@@ -26,5 +26,9 @@ datapath.txt
 ######################
 ./test-deploy/
 
-# Pycache in sourc e#
+# Pycache in source#
 ./source/__pycache__/
+
+# Config Output Data #
+./source/config-info-output
+./source/config-info-output/*
