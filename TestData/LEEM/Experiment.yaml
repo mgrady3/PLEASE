@@ -1,0 +1,18 @@
+Experiment:
+# Required Parameters
+    Type:  "LEEM"
+    Name:  "test.yaml"
+    Data Type:  "Raw"
+    File Format:  ".dat"
+    Image Parameters:
+        Height:  600
+        Width:  592
+    Energy Parameters:
+        Min:  -9.9
+        Max:  20.0
+        Step:  0.1
+    Data Path:  "/Users/Maxwell/Desktop/Ru_UNH_LEEM/141023/141023_02_LEEM-IV_40FOV"
+
+# Additional Parameters
+    Bit Size:  16
+    Byte Order:  L

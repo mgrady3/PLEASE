@@ -1,0 +1,19 @@
+Experiment:
+# Required Parameters
+    Type:  "LEED"
+    Name:  "Columbia-MoS2"
+    Data Type:  "Raw"
+    File Format:  ".dat"
+    Image Parameters:
+        Height: 544
+        Width:  576
+    Energy Parameters:
+        Min:  20.0
+        Max:  149.5
+        Step:  0.5
+    Data Path:  "/Users/Maxwell/LEEMIVTEST/LEED_IV_TIFF_Bulk_MoS2_20-150_eV/"
+
+
+# Additional Required Parameters
+    Bit Size:  16
+    Byte Order: "L"
