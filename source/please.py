@@ -766,7 +766,7 @@ class Viewer(QtWidgets.QWidget):
             print("Error: Window Length mut be positive even integer")
             return
         elif window_len % 2 != 0:
-            print("Error: Window Length was odd. Using closest even integer")
+            print("Warning: Window Length was odd. Using next highest even integer")
             window_len += 1
         if window_type.lower() not in ['flat', 'hanning',
                                        'hamming', 'bartlett',
@@ -782,7 +782,9 @@ class Viewer(QtWidgets.QWidget):
             # Changing the LEEM smoothing settings means we need to
             # reset our position mask array which declared if we had
             # previously calculated the smoothed data for a given point (x, y)
-            self.leemdat.posMask.fill(0)
+            if self.hasdisplayedLEEMdata:
+                # if we haven't displayed data yet, don't bother with this step.
+                self.leemdat.posMask.fill(0)
         return
 
     def toggleReflectivity(self, data=None):
