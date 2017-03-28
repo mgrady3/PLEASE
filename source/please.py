@@ -56,7 +56,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, v=None):
         """Parameter v tracks the current PLEASE version number."""
         super(QtWidgets.QMainWindow, self).__init__()
-        self.setWindowTitle("PLEASE v. {}".format(v))
+        if v is not None:
+            self.setWindowTitle("PLEASE v. {}".format(v))
+        else:
+            self.setWindowTitle("PLEASE")
         self.viewer = Viewer()
         self.setCentralWidget(self.viewer)
 
@@ -118,6 +121,10 @@ class MainWindow(QtWidgets.QMainWindow):
         clearLEEMAction = QtWidgets.QAction("Clear I(V)", self)
         clearLEEMAction.triggered.connect(self.viewer.clearLEEMIV)
         LEEMMenu.addAction(clearLEEMAction)
+
+        enableLEEMRectAction = QtWidgets.QAction("Enable LEEM Window Extraction", self)
+        enableLEEMRectAction.triggered.connect(self.viewer.enableLEEMWindow)
+        LEEMMenu.addAction(enableLEEMRectAction)
 
         toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
@@ -491,16 +498,16 @@ class Viewer(QtWidgets.QWidget):
         """
         # LEEM #
         # signals
-        sigmcLEEM = self.LEEMimage.scene().sigMouseClicked
-        sigmmvLEEM = self.LEEMimage.scene().sigMouseMoved
+        self.sigmcLEEM = self.LEEMimage.scene().sigMouseClicked
+        self.sigmmvLEEM = self.LEEMimage.scene().sigMouseMoved
 
-        sigmcLEEM.connect(self.handleLEEMClick)
-        sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+        self.sigmcLEEM.connect(self.handleLEEMClick)
+        self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
 
     def initLEEDEventHooks(self):
         """Setup event hooks for mouse click in LEEDimagewidget."""
-        sigmcLEED = self.LEEDimage.scene().sigMouseClicked
-        sigmcLEED.connect(self.handleLEEDClick)
+        self.sigmcLEED = self.LEEDimage.scene().sigMouseClicked
+        self.sigmcLEED.connect(self.handleLEEDClick)
 
     @staticmethod
     def h_line():
@@ -969,6 +976,13 @@ class Viewer(QtWidgets.QWidget):
             pass
         else:
             return
+
+    def enableLEEMWindow(self):
+        """Enable I(V) extraction from rectangular window.
+
+        Default is single pixel extraction.
+        """
+        pass
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
