@@ -281,11 +281,12 @@ class Viewer(QtWidgets.QWidget):
 
     def initConfigTab(self):
         """Setup Layout of Config Tab."""
-        configTabGroupbox = QtWidgets.QGroupBox()
+        # configTabGroupbox = QtWidgets.QGroupBox()
         configtabBottomButtonHBox = QtWidgets.QHBoxLayout()
-        configTabGroupButtonBox = QtWidgets.QHBoxLayout()
+        # configTabGroupButtonBox = QtWidgets.QHBoxLayout()
         configTabVBox = QtWidgets.QVBoxLayout()
 
+        """
         self.quitbut = QtWidgets.QPushButton("Quit", self)
         # self.quitbut.clicked.connect(self.Quit)
 
@@ -316,6 +317,7 @@ class Viewer(QtWidgets.QWidget):
 
         configTabVBox.addWidget(configTabGroupbox)
         configTabVBox.addWidget(self.h_line())
+        """
 
         # smooth settings
         smoothLEEDVBox = QtWidgets.QVBoxLayout()
@@ -400,11 +402,37 @@ class Viewer(QtWidgets.QWidget):
         smooth_group.setLayout(smoothColumn)
 
         configTabVBox.addWidget(smooth_group)
-        configTabVBox.addStretch()
+        configTabVBox.addWidget(self.h_line())
+
+        # LEED rect  size settings
+        RectSettingGroupBox = QtWidgets.QGroupBox()
+        LEEDRectSettingHBox = QtWidgets.QHBoxLayout()
+        LEEDRectSettingVBox = QtWidgets.QVBoxLayout()
+        RectSettingLabel = QtWidgets.QLabel("Enter LEED Window Side Length [even integer]")
+        LEEDRectSettingVBox.addWidget(RectSettingLabel)
+        self.LEEDRectEntry = QtWidgets.QLineEdit()
+        entryHBox = QtWidgets.QHBoxLayout()
+        entryHBox.addWidget(self.LEEDRectEntry)
+        entryHBox.addStretch()
+        self.LEEDRectApplyButton = QtWidgets.QPushButton("Apply Window Size", self)
+        self.LEEDRectApplyButton.clicked.connect(self.apply_LEED_window_size)
+        RectButtonHBox = QtWidgets.QHBoxLayout()
+        RectButtonHBox.addWidget(self.LEEDRectApplyButton)
+        RectButtonHBox.addStretch()
+
+        LEEDRectSettingVBox.addLayout(entryHBox)
+        LEEDRectSettingVBox.addLayout(RectButtonHBox)
+
+        LEEDRectSettingHBox.addLayout(LEEDRectSettingVBox)
+        LEEDRectSettingHBox.addStretch()
+
+        RectSettingGroupBox.setLayout(LEEDRectSettingHBox)
+        configTabVBox.addWidget(RectSettingGroupBox)
+
         configTabVBox.addStretch()
 
         configtabBottomButtonHBox.addStretch(1)
-        configtabBottomButtonHBox.addWidget(self.quitbut)
+        # configtabBottomButtonHBox.addWidget(self.quitbut)
         configTabVBox.addLayout(configtabBottomButtonHBox)
         self.ConfigTab.setLayout(configTabVBox)
 
@@ -797,6 +825,21 @@ class Viewer(QtWidgets.QWidget):
         if data == "LEED":
             pass  # TODO: decide if we want this as a feature
 
+    def apply_LEED_window_size(self):
+        """Set side length for Rectangular integration window from User input."""
+        userinput = str(self.LEEDRectEntry.text())
+        try:
+            userinput = int(userinput)
+        except TypeError:
+            print("Error: LEED Window Side length must be entered as an even integer")
+            return
+        if userinput % 2 != 0:
+            print("Warning: Window side Length was odd. Using next highest even integer")
+            userinput += 1
+        self.boxrad = userinput / 2
+        print("Setting LEED Window size to {0}x{1} ...".format(userinput, userinput))
+        return
+
     @QtCore.pyqtSlot()
     def smoothing_statechange(self, data=None):
         """Toggle LEED smoothing option."""
@@ -1089,11 +1132,15 @@ class Viewer(QtWidgets.QWidget):
         # pen.setBrush(QtCore.Qt.red)
         pen.setColor(self.qcolors[self.LEEDclicks - 1])
         rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
+
         # We need access to the QGraphicsRectItem inorder to later call
         # removeItem(). However, we also need access to the QRectF object
         # in order to get coordinates. Thus we store a reference to both along
         # with the pen used for coloring the Rect.
-        self.LEEDrects.append((rectitem, rect, pen))
+        # Finally, we need to keep track of the window side length for each selections
+        # as it is user configurable
+
+        self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
@@ -1101,13 +1148,14 @@ class Viewer(QtWidgets.QWidget):
             return
 
         for idx, tup in enumerate(self.LEEDrects):
+            sidelength = 2*tup[3]
             center = tup[1].center()
             self.LEEDselections.append((center.y(), center.x()))
             topleft = tup[1].topLeft()
             xtl = int(topleft.x())
             ytl = int(topleft.y())
-            int_window = self.leeddat.dat3d[ytl:ytl+2*self.boxrad+1,
-                                            xtl:xtl+2*self.boxrad+1, :]
+            int_window = self.leeddat.dat3d[ytl:ytl+sidelength+1,
+                                            xtl:xtl+sidelength+1, :]
             ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
