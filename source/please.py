@@ -126,6 +126,10 @@ class MainWindow(QtWidgets.QMainWindow):
         enableLEEMRectAction.triggered.connect(self.viewer.enableLEEMWindow)
         LEEMMenu.addAction(enableLEEMRectAction)
 
+        disableLEEMRectAction = QtWidgets.QAction("Disable LEEM Window Extraction", self)
+        disableLEEMRectAction.triggered.connect(self.viewer.disableLEEMWindow)
+        LEEMMenu.addAction(disableLEEMRectAction)
+
         toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
         LEEMMenu.addAction(toggleLEEMReflectivityAction)
@@ -982,7 +986,53 @@ class Viewer(QtWidgets.QWidget):
 
         Default is single pixel extraction.
         """
-        pass
+        # disable mouse movement tracking
+        # reroute mouse click signal to new handle
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable mousemovement tracking
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable the default mouse click behaviour
+            pass
+
+        self.sigmcLEEM.connect()
+
+        # move cropsshair away from image area
+        self.crosshair.vline.setPos(0)
+        self.crosshair.hline.setPos(0)
+
+    def disableLEEMWindow(self):
+        """Disable I(V) extraction from rectangular window.
+
+        Reinstate default behavior: single pixel extraction.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse movement tracking handler
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse click handler
+            pass
+        self.sigmcLEEM.connect(self.handleLEEMClick)
+        self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+
+    def handleLEEMWindow(self, event):
+        """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
+        if not self.hasdisplayedLEEMdata:
+            return
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
