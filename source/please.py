@@ -1062,7 +1062,7 @@ class Viewer(QtWidgets.QWidget):
             x = pos.x()
             y = pos.y()
 
-            firstclicklocation = (self.LEEMclicks[-1].x(), self.LEEMclicks[-1].y())
+            firstclicklocation = (self.LEEMcircs[-1].x(), self.LEEMcircs[-1].y())
 
             # Determine rect orientation
             if x > firstclicklocation[0] and y > firstclicklocation[1]:
@@ -1116,8 +1116,11 @@ class Viewer(QtWidgets.QWidget):
             pen.setWidth(4)
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[self.LEEMRectCount -1])
-            rectitem = self.LEEMimageplotwidget.scene().addRect(rect, pen=pen)
+            rectitem = self.LEEMimage.scene().addRect(rect, pen=pen)
             self.LEEMRects.append((rectitem, rect, pen))
+            self.LEEMclicks = 0
+            for circ in self.LEEMcircs:
+                self.LEEMimage.scene().removeItem(circ)
 
 
 
