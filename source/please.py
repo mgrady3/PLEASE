@@ -60,7 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setWindowTitle("PLEASE v. {}".format(v))
         else:
             self.setWindowTitle("PLEASE")
-        self.viewer = Viewer()
+        self.viewer = Viewer(parent=self)
         self.setCentralWidget(self.viewer)
 
         self.menubar = self.menuBar()
@@ -108,50 +108,55 @@ class MainWindow(QtWidgets.QMainWindow):
         helpMenu = self.menubar.addMenu("Help")
 
         # File menu
-        exitAction = QtWidgets.QAction("Exit", self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.quit)
-        fileMenu.addAction(exitAction)
+        self.exitAction = QtWidgets.QAction("Exit", self)
+        self.exitAction.setShortcut('Ctrl+Q')
+        self.exitAction.triggered.connect(self.quit)
+        fileMenu.addAction(self.exitAction)
 
         # LEEM menu
-        outputLEEMAction = QtWidgets.QAction("Output I(V)", self)
-        outputLEEMAction.triggered.connect(lambda: self.viewer.outputIV(datatype='LEEM'))
-        LEEMMenu.addAction(outputLEEMAction)
+        self.outputLEEMAction = QtWidgets.QAction("Output I(V)", self)
+        self.outputLEEMAction.triggered.connect(lambda: self.viewer.outputIV(datatype='LEEM'))
+        LEEMMenu.addAction(self.outputLEEMAction)
 
-        clearLEEMAction = QtWidgets.QAction("Clear I(V)", self)
-        clearLEEMAction.triggered.connect(self.viewer.clearLEEMIV)
-        LEEMMenu.addAction(clearLEEMAction)
+        self.clearLEEMAction = QtWidgets.QAction("Clear I(V)", self)
+        self.clearLEEMAction.triggered.connect(self.viewer.clearLEEMIV)
+        LEEMMenu.addAction(self.clearLEEMAction)
 
-        enableLEEMRectAction = QtWidgets.QAction("Enable LEEM Window Extraction", self)
-        enableLEEMRectAction.triggered.connect(self.viewer.enableLEEMWindow)
-        LEEMMenu.addAction(enableLEEMRectAction)
+        self.enableLEEMRectAction = QtWidgets.QAction("Enable LEEM Window Extraction", self)
+        self.enableLEEMRectAction.triggered.connect(self.viewer.enableLEEMWindow)
+        LEEMMenu.addAction(self.enableLEEMRectAction)
 
-        disableLEEMRectAction = QtWidgets.QAction("Disable LEEM Window Extraction", self)
-        disableLEEMRectAction.triggered.connect(self.viewer.disableLEEMWindow)
-        LEEMMenu.addAction(disableLEEMRectAction)
+        self.disableLEEMRectAction = QtWidgets.QAction("Disable LEEM Window Extraction", self)
+        self.disableLEEMRectAction.triggered.connect(self.viewer.disableLEEMWindow)
+        LEEMMenu.addAction(self.disableLEEMRectAction)
 
-        toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
-        toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
-        LEEMMenu.addAction(toggleLEEMReflectivityAction)
+        self.extractLEEMWindowAction = QtWidgets.QAction("Extract I(V) from Windows", self)
+        self.extractLEEMWindowAction.triggered.connect(self.viewer.extractLEEMWindows)
+        self.extractLEEMWindowAction.setEnabled(self.viewer.LEEMRectWindowEnabled)
+        LEEMMenu.addAction(self.extractLEEMWindowAction)
+
+        self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
+        self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
+        LEEMMenu.addAction(self.toggleLEEMReflectivityAction)
 
         # LEED menu
-        extractAction = QtWidgets.QAction("Extract I(V)", self)
+        self.extractAction = QtWidgets.QAction("Extract I(V)", self)
         # extractAction.setShortcut("Ctrl-E")
-        extractAction.triggered.connect(self.viewer.processLEEDIV)
-        LEEDMenu.addAction(extractAction)
+        self.extractAction.triggered.connect(self.viewer.processLEEDIV)
+        LEEDMenu.addAction(self.extractAction)
 
-        clearAction = QtWidgets.QAction("Clear I(V)", self)
-        clearAction.triggered.connect(self.viewer.clearLEEDIV)
-        LEEDMenu.addAction(clearAction)
+        self.clearAction = QtWidgets.QAction("Clear I(V)", self)
+        self.clearAction.triggered.connect(self.viewer.clearLEEDIV)
+        LEEDMenu.addAction(self.clearAction)
 
-        toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
-        toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
-        LEEDMenu.addAction(toggleLEEDReflectivityAction)
+        self.toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
+        self.toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
+        LEEDMenu.addAction(self.toggleLEEDReflectivityAction)
 
         # Help menu
-        genConfigInfoFileAction = QtWidgets.QAction("Generate User Config File", self)
-        genConfigInfoFileAction.triggered.connect(output_environment_config)
-        helpMenu.addAction(genConfigInfoFileAction)
+        self.genConfigInfoFileAction = QtWidgets.QAction("Generate User Config File", self)
+        self.genConfigInfoFileAction.triggered.connect(output_environment_config)
+        helpMenu.addAction(self.genConfigInfoFileAction)
 
     @staticmethod
     def quit():
@@ -168,7 +173,7 @@ class Viewer(QtWidgets.QWidget):
         Setup Tab structure
         Connect key/mouse event hooks to image plot widgets
         """
-        super(QtWidgets.QWidget, self).__init__()
+        super(QtWidgets.QWidget, self).__init__(parent=parent)
         self.initData()
         self.layout = QtWidgets.QVBoxLayout()
 
@@ -215,6 +220,7 @@ class Viewer(QtWidgets.QWidget):
         self.leeddat = LeedData()
         self.LEEMselections = []  # store coords of leem clicks in (r,c) format
         self.LEEDselections = []  # store coords of leed clicks in (r,c) format
+        self.LEEMRectWindowEnabled = False
 
         self.smoothLEEDplot = False
         self.smoothLEEMplot = False
@@ -1022,6 +1028,9 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMRectCount = 0
         self.LEEMRects = []
 
+        self.LEEMRectWindowEnabled = True
+        self.parentWidget().extractLEEMWindowAction.setEnabled(True)
+
     def disableLEEMWindow(self):
         """Disable I(V) extraction from rectangular window.
 
@@ -1053,6 +1062,8 @@ class Viewer(QtWidgets.QWidget):
         # Reset Mouse event signals to default behaviour
         self.sigmcLEEM.connect(self.handleLEEMClick)
         self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+        self.LEEMRectWindowEnabled = False
+        self.parentWidget().extractLEEMWindowAction.setEnabled(False)
 
     def handleLEEMWindow(self, event):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
@@ -1150,6 +1161,27 @@ class Viewer(QtWidgets.QWidget):
             for circ in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(circ)
             self.LEEMcircs = []
+
+    def extractLEEMWindows(self):
+        """Extract I(V) from User defined rectangular windows and Plot in main IV area."""
+        if not self.hasdisplayedLEEMdata or not self.LEEMRects or self.LEEMRectCount == 0:
+            return
+        self.LEEMivplotwidget.clear()
+        for tup in self.LEEMRects:
+            # QRectF object is second item in container
+            rect = tup[1]
+            topleft = rect.topLeft()
+            xtl = int(topleft.x())
+            ytl = int(topleft.y())
+            width = int(rect.width())
+            height = int(rect.height())
+            print("Window Selected: x={0}, y={1}, width={2}, height={3}".format(xtl, ytl, width, height))
+            window = self.leemdat.dat3d[ytl:ytl + height + 1,
+                                        xtl:xtl + width + 1, :]
+            ilist = [img.sum() for img in np.rollaxis(window, 2)]
+            if self.smoothLEEMplot:
+                ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
+            self.LEEMivplotwidget.plot(self.leemdat.elist, ilist, pen=pg.mkPen(tup[2].color(), width=2))
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
@@ -1254,6 +1286,8 @@ class Viewer(QtWidgets.QWidget):
         # update IV plot
         xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]  # raw unsmoothed data
+        # print("Mouse Location - Mapped Coordinates: x={0}, y={1}".format(xmp, ymp))
+        # print("Mouse Location - Unmapped Coordinates: x={0}, y={1}".format(int(pos.x()), int(pos.y())))
         if self.rescaleLEEMIntensity:
             ydata = [point/float(max(ydata)) for point in ydata]
         if self.smoothLEEMplot and not self.leemdat.posMask[ymp, xmp]:
@@ -1339,7 +1373,7 @@ class Viewer(QtWidgets.QWidget):
             ytl = int(topleft.y())
             int_window = self.leeddat.dat3d[ytl:ytl+sidelength+1,
                                             xtl:xtl+sidelength+1, :]
-            ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            ilist = [img.sum()/float(int_window.shape[0]*int_window.shape[1]) for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
             self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=2))
