@@ -1001,11 +1001,22 @@ class Viewer(QtWidgets.QWidget):
             # This is ok. Here we just want to disable the default mouse click behaviour
             pass
 
-        self.sigmcLEEM.connect()
+        self.sigmcLEEM.connect(self.handleLEEMWindow)
 
         # move cropsshair away from image area
         self.crosshair.vline.setPos(0)
         self.crosshair.hline.setPos(0)
+
+        # remove any ucrrent LEEM clicks
+        self.LEEMclicks = 0
+        if self.LEEMcircs:
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        self.LEEMRects = []
+
 
     def disableLEEMWindow(self):
         """Disable I(V) extraction from rectangular window.
@@ -1031,8 +1042,84 @@ class Viewer(QtWidgets.QWidget):
 
     def handleLEEMWindow(self, event):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
-        if not self.hasdisplayedLEEMdata:
+        if not self.hasdisplayedLEEMdata or event.currentItem is None:
             return
+
+        self.LEEMclicks += 1
+        pos = event.pos()
+        if self.LEEMclicks == 1:
+            # mark location of first click
+            brush = QtGui.QBrush(self.qcolors[self.LEEMclicks - 1])
+            rad = 8
+            x = pos.x() - rad/2  # offset for QRectF
+            y = pos.y() - rad/2  # offset for QRectF
+
+            circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
+            self.LEEMcircs.append(circ)
+        elif self.LEEMclicks == 2:
+            # Use second location to draw rectangle
+
+            x = pos.x()
+            y = pos.y()
+
+            firstclicklocation = (self.LEEMclicks[-1].x(), self.LEEMclicks[-1].y())
+
+            # Determine rect orientation
+            if x > firstclicklocation[0] and y > firstclicklocation[1]:
+                # first click is top left, second is bottom right
+                topleft = firstclicklocation
+                bottomright = (x, y)
+                width = bottomright[0] - topleft[0]
+                height = bottomright[1] - topleft[1]
+
+            elif x > firstclicklocation[0] and y < firstclicklocation[1]:
+                # first click is bottom left, second is top right
+                width = x - firstclicklocation[0]
+                height = firstclicklocation[1] - y
+                topleft = (firstclicklocation[0], y)
+                bottomright = (x, firstclicklocation[1])
+
+            elif x < firstclicklocation[0] and y > firstclicklocation[1]:
+                # first click is top right, second is bottom left
+                width = firstclicklocation[0] - x
+                height = y - firstclicklocation[1]
+                topleft = (x, firstclicklocation[1])
+                bottomright = (firstclicklocation[0], y)
+            elif x > firstclicklocation[0] and y > firstclicklocation[1]:
+                # first click is bottom right, second is top left
+                topleft = (x, y)
+                bottomright = firstclicklocation
+                width = bottomright[0] - topleft[0]
+                height = bottomright[1] - topleft[1]
+            else:
+                # invlaid location for second click
+                self.LEEMclicks -= 1
+                return
+
+            self.LEEMRectCount += 1
+
+            if self.LEEMRectCount > len(self.qcolors):
+                # Too many rects; delete and reset counts
+                for tup in self.LEEMRects:
+                    # first item in container is rectitem
+                    self.LEEMimageplotwidget.scene().removeItem(tup[0])
+                self.LEEMclicks = 0
+                self.LEEMcircs = []
+                self.LEEMselections = []
+                self.LEEMRectCount = 0
+                self.LEEMRects = []
+                return
+            # construct rect
+            rect = QtCore.QRectF(topleft[0], topleft[1], width, height)
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            # pen.setBrush(QtCore.Qt.red)
+            pen.setColor(self.qcolors[self.LEEMRectCount -1])
+            rectitem = self.LEEMimageplotwidget.scene().addRect(rect, pen=pen)
+            self.LEEMRects.append((rectitem, rect, pen))
+
+
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
@@ -1092,6 +1179,7 @@ class Viewer(QtWidgets.QWidget):
         y = pos.y() - rad/2  # offset for QRectF
 
         circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
+        # print("Click at x={0}, y={1}".format(x, y))
         self.LEEMcircs.append(circ)
         self.LEEMselections.append((ymp, xmp))  # (r,c) format
 
@@ -1169,8 +1257,9 @@ class Viewer(QtWidgets.QWidget):
         if self.LEEDclicks > len(self.qcolors):
             self.LEEDclicks = 1
             if self.LEEDrects:
-                for rect in self.LEEDrects:
-                    self.LEEDimagewidget.scene().removeItem(rect)
+                for tup in self.LEEDrects:
+                    # first item in container is the rectitem
+                    self.LEEDimagewidget.scene().removeItem(tup[0])
             self.LEEDrects = []
 
         pos = event.pos()
