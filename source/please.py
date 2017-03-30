@@ -254,6 +254,9 @@ class Viewer(QtWidgets.QWidget):
         imtitlehbox.addStretch()
         imvbox.addLayout(imtitlehbox)
         self.LEEMimageplotwidget = pg.PlotWidget()
+        # disable mouse pan on left click
+        self.LEEMimageplotwidget.getPlotItem().getViewBox().setMouseEnabled(x=False, y=False)
+
         self.LEEMimageplotwidget.hideAxis("bottom")
         self.LEEMimageplotwidget.hideAxis("left")
         # self.LEEMimageplotwidget.setTitle("LEEM Real Space Image",
@@ -467,6 +470,8 @@ class Viewer(QtWidgets.QWidget):
         self.imvbox.addLayout(imtitlehbox)
 
         self.LEEDimagewidget = pg.PlotWidget()
+        # disable mouse pan on left click
+        self.LEEDimagewidget.getPlotItem().getViewBox().setMouseEnabled(x=False, y=False)
         self.LEEDimagewidget.hideAxis("bottom")
         self.LEEDimagewidget.hideAxis("left")
         self.LEEDimagewidget.addItem(self.LEEDimage)  # dummy data
@@ -1017,7 +1022,6 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMRectCount = 0
         self.LEEMRects = []
 
-
     def disableLEEMWindow(self):
         """Disable I(V) extraction from rectangular window.
 
@@ -1037,92 +1041,115 @@ class Viewer(QtWidgets.QWidget):
             # This is ok, and we can continue to reconnect this signal to the
             # LEEM mouse click handler
             pass
+
+        # delete current rect windows and reset click count
+        for tup in self.LEEMRects:
+            self.LEEMimageplotwidget.scene().removeItem(tup[0])
+        self.LEEMclicks = 0
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        self.LEEMRects = []
+        # Reset Mouse event signals to default behaviour
         self.sigmcLEEM.connect(self.handleLEEMClick)
         self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
 
     def handleLEEMWindow(self, event):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
-        if not self.hasdisplayedLEEMdata or event.currentItem is None:
+        if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
             return
 
+        if len(self.LEEMRects) >= len(self.qcolors):
+            # already reached maximum number of Rect windows.
+            # reset then begin again
+            for tup in self.LEEMRects:
+                # first item in container is rectitem
+                self.LEEMimageplotwidget.scene().removeItem(tup[0])
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+            self.LEEMclicks = 0
+            self.LEEMcircs = []
+            self.LEEMselections = []
+            self.LEEMRectCount = 0
+            self.LEEMRects = []
+
         self.LEEMclicks += 1
-        pos = event.pos()
+
         if self.LEEMclicks == 1:
             # mark location of first click
-            brush = QtGui.QBrush(self.qcolors[self.LEEMclicks - 1])
+            pos = event.pos()
+            brush = QtGui.QBrush(self.qcolors[len(self.LEEMRects)])
             rad = 8
             x = pos.x() - rad/2  # offset for QRectF
             y = pos.y() - rad/2  # offset for QRectF
 
             circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
             self.LEEMcircs.append(circ)
+            self.firstclickLEEM = (x, y)
+
         elif self.LEEMclicks == 2:
             # Use second location to draw rectangle
-
+            pos = event.pos()
             x = pos.x()
             y = pos.y()
-
-            firstclicklocation = (self.LEEMcircs[-1].x(), self.LEEMcircs[-1].y())
+            self.secondclickLEEM = (x, y)
 
             # Determine rect orientation
-            if x > firstclicklocation[0] and y > firstclicklocation[1]:
+            if (self.secondclickLEEM[0] > self.firstclickLEEM[0] and
+               self.secondclickLEEM[1] > self.firstclickLEEM[1]):
+
                 # first click is top left, second is bottom right
-                topleft = firstclicklocation
-                bottomright = (x, y)
+                topleft = self.firstclickLEEM
+                bottomright = self.secondclickLEEM
                 width = bottomright[0] - topleft[0]
                 height = bottomright[1] - topleft[1]
 
-            elif x > firstclicklocation[0] and y < firstclicklocation[1]:
+            elif (self.secondclickLEEM[0] > self.firstclickLEEM[0] and
+                  self.secondclickLEEM[1] < self.firstclickLEEM[1]):
+
                 # first click is bottom left, second is top right
-                width = x - firstclicklocation[0]
-                height = firstclicklocation[1] - y
-                topleft = (firstclicklocation[0], y)
-                bottomright = (x, firstclicklocation[1])
+                width = self.secondclickLEEM[0] - self.firstclickLEEM[0]
+                height = self.firstclickLEEM[1] - self.secondclickLEEM[1]
+                topleft = (self.firstclickLEEM[0], self.secondclickLEEM[1])
+                bottomright = (self.secondclickLEEM[0], self.firstclickLEEM[1])
 
-            elif x < firstclicklocation[0] and y > firstclicklocation[1]:
+            elif (self.secondclickLEEM[0] < self.firstclickLEEM[0] and
+                  self.secondclickLEEM[1] > self.firstclickLEEM[1]):
+
                 # first click is top right, second is bottom left
-                width = firstclicklocation[0] - x
-                height = y - firstclicklocation[1]
-                topleft = (x, firstclicklocation[1])
-                bottomright = (firstclicklocation[0], y)
-            elif x > firstclicklocation[0] and y > firstclicklocation[1]:
+                width = self.firstclickLEEM[0] - self.secondclickLEEM[0]
+                height = self.secondclickLEEM[1] - self.firstclickLEEM[1]
+                topleft = (self.secondclickLEEM[0], self.firstclickLEEM[1])
+                bottomright = (self.firstclickLEEM[0], self.secondclickLEEM[1])
+
+            elif (self.secondclickLEEM[0] < self.firstclickLEEM[0] and
+                  self.secondclickLEEM[1] < self.firstclickLEEM[1]):
+
                 # first click is bottom right, second is top left
-                topleft = (x, y)
-                bottomright = firstclicklocation
+                topleft = self.secondclickLEEM
+                bottomright = self.firstclickLEEM
                 width = bottomright[0] - topleft[0]
                 height = bottomright[1] - topleft[1]
+
             else:
-                # invlaid location for second click
+                # invlaid location for second click; Either width or height would be zero
                 self.LEEMclicks -= 1
                 return
 
             self.LEEMRectCount += 1
-
-            if self.LEEMRectCount > len(self.qcolors):
-                # Too many rects; delete and reset counts
-                for tup in self.LEEMRects:
-                    # first item in container is rectitem
-                    self.LEEMimageplotwidget.scene().removeItem(tup[0])
-                self.LEEMclicks = 0
-                self.LEEMcircs = []
-                self.LEEMselections = []
-                self.LEEMRectCount = 0
-                self.LEEMRects = []
-                return
             # construct rect
             rect = QtCore.QRectF(topleft[0], topleft[1], width, height)
             pen = QtGui.QPen()
             pen.setStyle(QtCore.Qt.SolidLine)
             pen.setWidth(4)
             # pen.setBrush(QtCore.Qt.red)
-            pen.setColor(self.qcolors[self.LEEMRectCount -1])
-            rectitem = self.LEEMimage.scene().addRect(rect, pen=pen)
+            pen.setColor(self.qcolors[self.LEEMRectCount - 1])
+            rectitem = self.LEEMimageplotwidget.scene().addRect(rect, pen=pen)
             self.LEEMRects.append((rectitem, rect, pen))
             self.LEEMclicks = 0
             for circ in self.LEEMcircs:
-                self.LEEMimage.scene().removeItem(circ)
-
-
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+            self.LEEMcircs = []
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
