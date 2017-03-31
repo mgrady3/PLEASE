@@ -522,7 +522,7 @@ class Viewer(QtWidgets.QWidget):
     def initLEEDEventHooks(self):
         """Setup event hooks for mouse click in LEEDimagewidget."""
         self.sigmcLEED = self.LEEDimage.scene().sigMouseClicked
-        self.sigmcLEED.connect(self.handleLEEDClick)
+        self.sigmcLEED.connect(self.handleLEEDClick2)
 
     @staticmethod
     def h_line():
@@ -1305,6 +1305,29 @@ class Viewer(QtWidgets.QWidget):
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
         self.LEEMivplotwidget.getPlotItem().clear()
         self.LEEMivplotwidget.getPlotItem().addItem(pdi, clear=True)
+
+    def handleLEEDClick2(self, event):
+        """User click registered in LEEDimage area."""
+        if not self.hasdisplayedLEEDdata or event.currentItem is None:
+            return
+
+        self.LEEDclicks += 1
+        if self.LEEDclicks > len(self.qcolors):
+            self.LEEDclicks = 1
+            if self.LEEDrects:
+                for tup in self.LEEDrects:
+                    # first item in container is the rectitem
+                    self.LEEDimagewidget.scene().removeItem(tup[0])
+            self.LEEDrects = []
+
+        print(type(event))
+        print("(x,y) Event.pos()={0}".format((event.pos().x(), event.pos().y())))
+        print("(x,y) Event.scenePos()={0}".format((event.scenePos().x(), event.scenePos().y())))
+        print("(x,y) Event.screenPos()={0}".format((event.screenPos().x(), event.screenPos().y())))
+        mp = self.LEEDimage.mapFromScene(event.scenePos())
+        print("(x,y) mapFromScene(Event.scenePos())={0}".format((mp.x(), mp.y())))
+
+
 
     def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""
