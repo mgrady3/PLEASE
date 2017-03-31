@@ -1338,6 +1338,11 @@ class Viewer(QtWidgets.QWidget):
             return  # discard click events originating outside the image
         xp = pos.x()
         yp = pos.y()
+        """
+        pos = self.LEEDimage.mapFromScene(event.scenePos())
+        xp = int(pos.x())
+        yp = int(pos.y())
+        """
         topleftcorner = QtCore.QPointF(xp - self.boxrad,
                                        yp - self.boxrad)
         rect = QtCore.QRectF(topleftcorner.x(), topleftcorner.y(),
