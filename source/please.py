@@ -142,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # LEED menu
         self.extractAction = QtWidgets.QAction("Extract I(V)", self)
         # extractAction.setShortcut("Ctrl-E")
-        self.extractAction.triggered.connect(self.viewer.processLEEDIV2)
+        self.extractAction.triggered.connect(self.viewer.processLEEDIV)
         LEEDMenu.addAction(self.extractAction)
 
         self.clearAction = QtWidgets.QAction("Clear I(V)", self)
@@ -523,7 +523,7 @@ class Viewer(QtWidgets.QWidget):
     def initLEEDEventHooks(self):
         """Setup event hooks for mouse click in LEEDimagewidget."""
         self.sigmcLEED = self.LEEDimage.scene().sigMouseClicked
-        self.sigmcLEED.connect(self.handleLEEDClick2)
+        self.sigmcLEED.connect(self.handleLEEDClick)
 
     @staticmethod
     def h_line():
@@ -929,7 +929,15 @@ class Viewer(QtWidgets.QWidget):
             self.LEEMimageplotwidget.getPlotItem().clear()
 
         self.curLEEMIndex = self.leemdat.dat3d.shape[2]//2
-        self.LEEMimage = pg.ImageItem(self.leemdat.dat3d[:, :, self.curLEEMIndex])
+
+        # pyqtgraph displays the array rotated 90 degrees CCW. To force the display to match the original array we
+        # display a rotated + flipped array so that the image is displayed correctly
+        # see the following discussion on the pyqtgraph forum for more information
+        # https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/pyqtgraph/aMQW16vF9Os/mmILDzCyCAAJ
+        # Pyqtgraph interprets array data as [width, height]. So we apply a horizontal flip via [::-1, :]
+        # then transpose the flipped array. This is equivalent to a 90 degree rotation in the CCW direction.
+
+        self.LEEMimage = pg.ImageItem(self.leemdat.dat3d[::-1, :, self.curLEEMIndex].T)
         self.LEEMimageplotwidget.addItem(self.LEEMimage)
         self.LEEMimageplotwidget.hideAxis('bottom')
         self.LEEMimageplotwidget.hideAxis('left')
@@ -1287,17 +1295,19 @@ class Viewer(QtWidgets.QWidget):
             return  # discard  movement events originating outside the image
 
         # update crosshair
-        self.crosshair.curPos = (xmp, ymp)
+        self.crosshair.curPos = (xmp, ymp)  # place cross hair with y coordinate in reference to bottom edge as y=0
         self.crosshair.vline.setPos(xmp)
         self.crosshair.hline.setPos(ymp)
+
+        # convert to array (numpy) y coordinate by inverting the y value
+        ymp = self.leemdat.dat3d.shape[0] - 1 - ymp
         self.currentLEEMPos = (xmp, ymp)  # used for handleLEEMClick()
-        # print("Mouse moved to: {0}, {1}".format(xmp, ymp))
+        # print("Mouse moved to: {0}, {1}".format(xmp, ymp))  # array coordinates
 
         # update IV plot
         xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]  # raw unsmoothed data
-        # print("Mouse Location - Mapped Coordinates: x={0}, y={1}".format(xmp, ymp))
-        # print("Mouse Location - Unmapped Coordinates: x={0}, y={1}".format(int(pos.x()), int(pos.y())))
+
         if self.rescaleLEEMIntensity:
             ydata = [point/float(max(ydata)) for point in ydata]
         if self.smoothLEEMplot and not self.leemdat.posMask[ymp, xmp]:
@@ -1371,7 +1381,7 @@ class Viewer(QtWidgets.QWidget):
             # as it is user configurable
             self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
             self.LEEDclickpos.append((xmp, ymp))  # store x, y coordinate of mouse click in array coordinates
-            print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
+            # print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
@@ -1479,7 +1489,10 @@ class Viewer(QtWidgets.QWidget):
         """Display LEEM image from main data array at index=idx."""
         if idx not in range(self.leemdat.dat3d.shape[2] - 1):
             return
-        self.LEEMimage.setImage(self.leemdat.dat3d[:, :, idx])
+
+        # see note in instance method update_LEEM_img_after_load()
+        # for why the displayed image uses a horizontal flip + transpose
+        self.LEEMimage.setImage(self.leemdat.dat3d[::-1, :, idx].T)
 
     def showLEEDImage(self, idx):
         """Display LEED image from main data array at index=idx."""
