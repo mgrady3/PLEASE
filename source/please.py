@@ -729,8 +729,8 @@ class Viewer(QtWidgets.QWidget):
             self.threads = []
             for idx, tup in enumerate(self.LEEMselections):
                 outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                x = tup[1]
-                y = tup[0]
+                x = tup[0]
+                y = tup[1]
                 ilist = self.leemdat.dat3d[y, x, :]
                 if self.smoothLEEMoutput:
                     ilist = LF.smooth(ilist,
@@ -1219,16 +1219,10 @@ class Viewer(QtWidgets.QWidget):
         if event.currentItem is None:
             return
 
+        if len(self.qcolors) <= self.LEEMclicks:
+            print("Maximum number of LEEM selections. Please clear current selections.")
+            return
         self.LEEMclicks += 1
-        if self.LEEMclicks > len(self.qcolors):
-            self.LEEMclicks = 1
-            if self.staticLEEMplot.isVisible():
-                self.staticLEEMplot.clear()
-            if self.LEEMcircs:
-                for circ in self.LEEMcircs:
-                    self.LEEMimageplotwidget.scene().removeItem(circ)
-            self.LEEMcircs = []
-            self.LEEMselections = []
 
         pos = event.pos()
         mappedPos = self.LEEMimage.mapFromScene(pos)
@@ -1245,9 +1239,12 @@ class Viewer(QtWidgets.QWidget):
             try:
                 # mouse position
                 xmp = self.currentLEEMPos[0]
-                ymp = self.currentLEEMPos[1]  # x and y in data coordinates
+                ymp = self.currentLEEMPos[1]  # x and y in array coordinates (top edge is y=0)
             except IndexError:
                 return
+        else:
+            print("Error: Failed to get currentLEEMPos for LEEMClick().")
+            return
         xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]
         if self.smoothLEEMplot:
@@ -1261,14 +1258,14 @@ class Viewer(QtWidgets.QWidget):
         circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
         # print("Click at x={0}, y={1}".format(x, y))
         self.LEEMcircs.append(circ)
-        self.LEEMselections.append((ymp, xmp))  # (r,c) format
+        self.LEEMselections.append((xmp, ymp))  # (x, y format)
 
         pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=2)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
+        self.staticLEEMplot.addItem(pdi)
         self.staticLEEMplot.setTitle("LEEM-I(V)")
         self.staticLEEMplot.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
         self.staticLEEMplot.setLabel('left', 'Intensity', units='a.u.', **self.labelStyle)
-        self.staticLEEMplot.addItem(pdi)
         if not self.staticLEEMplot.isVisible():
             self.staticLEEMplot.show()
 
@@ -1431,6 +1428,10 @@ class Viewer(QtWidgets.QWidget):
         if self.LEEMcircs:
             for item in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(item)
+        if self.staticLEEMplot.isVisible():
+            self.staticLEEMplot.close()
+            self.staticLEEMplot = pg.PlotWidget()  # reset to new plot instance but don't call show()
+            self.staticLEEMplot.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
     def keyPressEvent(self, event):
         """Set Arrow keys for navigation."""
