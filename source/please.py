@@ -142,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # LEED menu
         self.extractAction = QtWidgets.QAction("Extract I(V)", self)
         # extractAction.setShortcut("Ctrl-E")
-        self.extractAction.triggered.connect(self.viewer.processLEEDIV)
+        self.extractAction.triggered.connect(self.viewer.processLEEDIV2)
         LEEDMenu.addAction(self.extractAction)
 
         self.clearAction = QtWidgets.QAction("Clear I(V)", self)
@@ -210,6 +210,7 @@ class Viewer(QtWidgets.QWidget):
         # container for QRectF patches to be drawn atop LEEDimage
         self.LEEDrects = []  # stored as tuple (rect, pen)
         self.LEEDclicks = 0
+        self.LEEDclickpos = []  # container for position of LEED clicks in array coordinate system
         self.boxrad = 20  # Integration windows are rectangles 2*boxrad x 2*boxrad
 
         self.threads = []  # container for QThread objects used for outputting files
@@ -923,9 +924,7 @@ class Viewer(QtWidgets.QWidget):
             self.LEEMimageplotwidget.getPlotItem().clear()
 
         self.curLEEMIndex = self.leemdat.dat3d.shape[2]//2
-        self.LEEMimage = pg.ImageItem(self.leemdat.dat3d[:,
-                                                         :,
-                                                         self.curLEEMIndex])
+        self.LEEMimage = pg.ImageItem(self.leemdat.dat3d[:, :, self.curLEEMIndex])
         self.LEEMimageplotwidget.addItem(self.LEEMimage)
         self.LEEMimageplotwidget.hideAxis('bottom')
         self.LEEMimageplotwidget.hideAxis('left')
@@ -961,9 +960,12 @@ class Viewer(QtWidgets.QWidget):
             return
 
         self.curLEEDIndex = self.leeddat.dat3d.shape[2]//2
-        self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[:,
-                                                         :,
-                                                         self.curLEEDIndex])
+
+        # display a rotated + flipped array so that the image is displayed correctly
+        # see the following discussion on the pyqtgraph forum for more information
+        # https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/pyqtgraph/aMQW16vF9Os/mmILDzCyCAAJ
+
+        self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[:, :, self.curLEEDIndex])
         self.LEEDimagewidget.addItem(self.LEEDimage)
         self.LEEDimagewidget.hideAxis('bottom')
         self.LEEDimagewidget.hideAxis('left')
@@ -1319,15 +1321,51 @@ class Viewer(QtWidgets.QWidget):
                     # first item in container is the rectitem
                     self.LEEDimagewidget.scene().removeItem(tup[0])
             self.LEEDrects = []
+            self.LEEDclickpos = []
 
-        print(type(event))
-        print("(x,y) Event.pos()={0}".format((event.pos().x(), event.pos().y())))
-        print("(x,y) Event.scenePos()={0}".format((event.scenePos().x(), event.scenePos().y())))
-        print("(x,y) Event.screenPos()={0}".format((event.screenPos().x(), event.screenPos().y())))
-        mp = self.LEEDimage.mapFromScene(event.scenePos())
-        print("(x,y) mapFromScene(Event.scenePos())={0}".format((mp.x(), mp.y())))
+        pos = event.pos()  # scene position
+        x = int(pos.x())
+        y = int(pos.y())
 
+        viewbox = self.LEEDimagewidget.getPlotItem().getViewBox()
+        mappedPos = viewbox.mapSceneToView(event.scenePos())  # position in array coordinates
+        xmp = int(mappedPos.x())
+        ymp = int(mappedPos.y())
+        # pyqtgraph uses bottom edge as y=0; this converts the coordinate to the numpy system
+        ymp = (self.leeddat.dat3d.shape[0] - 1) - ymp
 
+        # check to see if click is too close to edge
+        if (xmp - self.boxrad < 0 or xmp + self.boxrad > self.leeddat.dat3d.shape[1] or
+           ymp - self.boxrad < 0 or ymp + self.boxrad > self.leeddat.dat3d.shape[0]):
+            print("Error: Click registered too close to image edge.")
+            print("Reduce window size or choose alternate extraction point")
+            self.LEEDclicks -= 1
+            return
+
+        if xmp >= 0 and xmp < self.leeddat.dat3d.shape[1] and ymp >= 0 and ymp < self.leeddat.dat3d.shape[0]:
+            # valid array coordinates
+
+            # rect needs to be drawn with scene coordinates
+            topleftcorner = QtCore.QPointF(x - self.boxrad,
+                                           y - self.boxrad)
+            rect = QtCore.QRectF(topleftcorner.x(), topleftcorner.y(),
+                                 2*self.boxrad, 2*self.boxrad)
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            # pen.setBrush(QtCore.Qt.red)
+            pen.setColor(self.qcolors[self.LEEDclicks - 1])
+            rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
+
+            # We need access to the QGraphicsRectItem inorder to later call
+            # removeItem(). However, we also need access to the QRectF object
+            # in order to get coordinates. Thus we store a reference to both along
+            # with the pen used for coloring the Rect.
+            # Finally, we need to keep track of the window side length for each selections
+            # as it is user configurable
+            self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
+            self.LEEDclickpos.append((xmp, ymp))  # store x,y coordinate of mouse click in array coordinates
+            print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
 
     def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""
@@ -1387,6 +1425,29 @@ class Viewer(QtWidgets.QWidget):
 
         self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
 
+    def processLEEDIV2(self):
+        """Plot I(V) from User selections."""
+        if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
+            return
+        for idx, tup in enumerate(self.LEEDclickpos):
+            # center coordinates
+            xc = tup[0]
+            yc = tup[1]
+
+            rad = self.LEEDrects[idx][3]
+
+            # top left corner
+            xtl = xc - rad
+            ytl = yc - rad
+
+            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
+                                            xtl:xtl + 2*rad + 1, :]
+            # ilist = [img.sum()/float(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+            ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            if self.smoothLEEDplot:
+                ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
+            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=2))
+
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
         if not self.hasdisplayedLEEDdata or not self.LEEDrects:
@@ -1416,6 +1477,7 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDrects = []
             self.LEEDselections = []
             self.LEEDclicks = 0
+            self.LEEDclickpos = []
 
     def clearLEEMIV(self):
         """Clear User selections from LEEM image and clear IV plot."""
