@@ -220,7 +220,7 @@ class Viewer(QtWidgets.QWidget):
         self.leemdat = LeemData()
         self.leeddat = LeedData()
         self.LEEMselections = []  # store coords of leem clicks in (r,c) format
-        self.LEEDselections = []  # store coords of leed clicks in (r,c) format
+        self.LEEDclickpos = []  # store coords of leed clicks in (r,c) format
         self.LEEMRectWindowEnabled = False
 
         self.smoothLEEDplot = False
@@ -744,7 +744,7 @@ class Viewer(QtWidgets.QWidget):
                 self.threads.append(thread)
                 thread.start()
 
-        elif datatype == 'LEED' and self.hasdisplayedLEEDdata and self.LEEDselections:
+        elif datatype == 'LEED' and self.hasdisplayedLEEDdata and self.LEEDclickpos:
             # Query User for output directory
             # PyQt5 - This method now returns a tuple - we want only the first element
             outdir = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory",
@@ -775,13 +775,15 @@ class Viewer(QtWidgets.QWidget):
                         print("Error: One or more threads has not finished file I/O ...")
                         return
             self.threads = []
-            for idx, tup in enumerate(self.LEEDselections):
+            for idx, tup in enumerate(self.LEEDclickpos):
                 outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                x = int(tup[1])
-                y = int(tup[0])
-                int_window = self.leeddat.dat3d[y - self.boxrad:y + self.boxrad + 1,
-                                                x - self.boxrad:x + self.boxrad + 1, :]
-                ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+                rad = self.LEEDrects[idx][3]
+                x = int(tup[0])
+                y = int(tup[1])
+                int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
+                                                x - rad:x + rad + 1, :]
+                # get average intensity per window
+                ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
                 if self.smoothLEEDoutput:
                     ilist = LF.smooth(ilist,
                                       window_len=self.LEEDWindowLen,
@@ -1311,7 +1313,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMivplotwidget.getPlotItem().clear()
         self.LEEMivplotwidget.getPlotItem().addItem(pdi, clear=True)
 
-    def handleLEEDClick2(self, event):
+    def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""
         if not self.hasdisplayedLEEDdata or event.currentItem is None:
             return
@@ -1368,65 +1370,7 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDclickpos.append((xmp, ymp))  # store x, y coordinate of mouse click in array coordinates
             print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
 
-    def handleLEEDClick(self, event):
-        """User click registered in LEEDimage area."""
-        if not self.hasdisplayedLEEDdata:
-            return
-
-        # clicking outside image area may cause event.currentItem
-        # to be None. This would then raise an error when trying to
-        # call event.pos()
-        if event.currentItem is None:
-            return
-
-        self.LEEDclicks += 1
-        if self.LEEDclicks > len(self.qcolors):
-            self.LEEDclicks = 1
-            if self.LEEDrects:
-                for tup in self.LEEDrects:
-                    # first item in container is the rectitem
-                    self.LEEDimagewidget.scene().removeItem(tup[0])
-            self.LEEDrects = []
-
-        pos = event.pos()
-        mappedPos = self.LEEMimage.mapFromScene(pos)
-        xmapfs = int(mappedPos.x())
-        ymapfs = int(mappedPos.y())
-
-        if xmapfs < 0 or \
-           xmapfs > self.leeddat.dat3d.shape[1] or \
-           ymapfs < 0 or \
-           ymapfs > self.leeddat.dat3d.shape[0]:
-            return  # discard click events originating outside the image
-        xp = pos.x()
-        yp = pos.y()
-        """
-        pos = self.LEEDimage.mapFromScene(event.scenePos())
-        xp = int(pos.x())
-        yp = int(pos.y())
-        """
-        topleftcorner = QtCore.QPointF(xp - self.boxrad,
-                                       yp - self.boxrad)
-        rect = QtCore.QRectF(topleftcorner.x(), topleftcorner.y(),
-                             2*self.boxrad, 2*self.boxrad)
-
-        pen = QtGui.QPen()
-        pen.setStyle(QtCore.Qt.SolidLine)
-        pen.setWidth(4)
-        # pen.setBrush(QtCore.Qt.red)
-        pen.setColor(self.qcolors[self.LEEDclicks - 1])
-        rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
-
-        # We need access to the QGraphicsRectItem inorder to later call
-        # removeItem(). However, we also need access to the QRectF object
-        # in order to get coordinates. Thus we store a reference to both along
-        # with the pen used for coloring the Rect.
-        # Finally, we need to keep track of the window side length for each selections
-        # as it is user configurable
-
-        self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
-
-    def processLEEDIV2(self):
+    def processLEEDIV(self):
         """Plot I(V) from User selections."""
         if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
             return
@@ -1452,26 +1396,7 @@ class Viewer(QtWidgets.QWidget):
             # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=2))
-
-    def processLEEDIV(self):
-        """Plot I(V) from User selections."""
-        if not self.hasdisplayedLEEDdata or not self.LEEDrects:
-            return
-
-        for idx, tup in enumerate(self.LEEDrects):
-            sidelength = 2*tup[3]
-            center = tup[1].center()
-            self.LEEDselections.append((center.y(), center.x()))
-            topleft = tup[1].topLeft()
-            xtl = int(topleft.x())
-            ytl = int(topleft.y())
-            int_window = self.leeddat.dat3d[ytl:ytl+sidelength+1,
-                                            xtl:xtl+sidelength+1, :]
-            ilist = [img.sum()/float(int_window.shape[0]*int_window.shape[1]) for img in np.rollaxis(int_window, 2)]
-            if self.smoothLEEDplot:
-                ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=2))
+            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=3))
 
     def clearLEEDIV(self):
         """Triggered by menu action to clear all LEED selections."""
@@ -1481,7 +1406,7 @@ class Viewer(QtWidgets.QWidget):
             for tup in self.LEEDrects:
                 self.LEEDimagewidget.scene().removeItem(tup[0])
             self.LEEDrects = []
-            self.LEEDselections = []
+            self.LEEDclickpos = []
             self.LEEDclicks = 0
             self.LEEDclickpos = []
 
