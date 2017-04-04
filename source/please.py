@@ -961,11 +961,14 @@ class Viewer(QtWidgets.QWidget):
 
         self.curLEEDIndex = self.leeddat.dat3d.shape[2]//2
 
+        # pyqtgraph displays the array rotated 90 degrees CCW. To force the display to match the original array we
         # display a rotated + flipped array so that the image is displayed correctly
         # see the following discussion on the pyqtgraph forum for more information
         # https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/pyqtgraph/aMQW16vF9Os/mmILDzCyCAAJ
+        # Pyqtgraph interprets array data as [width, height]. So we apply a horizontal flip via [::-1, :]
+        # then transpose the flipped array. This is equivalent to a 90 degree rotation in the CCW direction.
 
-        self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[:, :, self.curLEEDIndex])
+        self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[::-1, :, self.curLEEDIndex].T)
         self.LEEDimagewidget.addItem(self.LEEDimage)
         self.LEEDimagewidget.hideAxis('bottom')
         self.LEEDimagewidget.hideAxis('left')
@@ -1313,16 +1316,12 @@ class Viewer(QtWidgets.QWidget):
         if not self.hasdisplayedLEEDdata or event.currentItem is None:
             return
 
-        self.LEEDclicks += 1
-        if self.LEEDclicks > len(self.qcolors):
-            self.LEEDclicks = 1
-            if self.LEEDrects:
-                for tup in self.LEEDrects:
-                    # first item in container is the rectitem
-                    self.LEEDimagewidget.scene().removeItem(tup[0])
-            self.LEEDrects = []
-            self.LEEDclickpos = []
+        # Ensure number of LEED windows remains less than the max colors
+        if len(self.qcolors) <= self.LEEDclicks:
+            print("Maximum number of LEED Windows Reached. Please clear current selections.")
+            return
 
+        self.LEEDclicks += 1
         pos = event.pos()  # scene position
         x = int(pos.x())
         y = int(pos.y())
@@ -1331,21 +1330,23 @@ class Viewer(QtWidgets.QWidget):
         mappedPos = viewbox.mapSceneToView(event.scenePos())  # position in array coordinates
         xmp = int(mappedPos.x())
         ymp = int(mappedPos.y())
+
         # pyqtgraph uses bottom edge as y=0; this converts the coordinate to the numpy system
         ymp = (self.leeddat.dat3d.shape[0] - 1) - ymp
 
         # check to see if click is too close to edge
-        if (xmp - self.boxrad < 0 or xmp + self.boxrad > self.leeddat.dat3d.shape[1] or
-           ymp - self.boxrad < 0 or ymp + self.boxrad > self.leeddat.dat3d.shape[0]):
+        if (xmp - self.boxrad < 0 or xmp + self.boxrad >= self.leeddat.dat3d.shape[1] or
+           ymp - self.boxrad < 0 or ymp + self.boxrad >= self.leeddat.dat3d.shape[0]):
             print("Error: Click registered too close to image edge.")
             print("Reduce window size or choose alternate extraction point")
             self.LEEDclicks -= 1
             return
 
-        if xmp >= 0 and xmp < self.leeddat.dat3d.shape[1] and ymp >= 0 and ymp < self.leeddat.dat3d.shape[0]:
+        if xmp >= 0 and xmp < self.leeddat.dat3d.shape[1] - 1 and \
+           ymp >= 0 and ymp < self.leeddat.dat3d.shape[0] - 1:
             # valid array coordinates
 
-            # rect needs to be drawn with scene coordinates
+            # QGraphicsRectItem is drawn using the scene coordinates (x, y)
             topleftcorner = QtCore.QPointF(x - self.boxrad,
                                            y - self.boxrad)
             rect = QtCore.QRectF(topleftcorner.x(), topleftcorner.y(),
@@ -1355,7 +1356,7 @@ class Viewer(QtWidgets.QWidget):
             pen.setWidth(4)
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[self.LEEDclicks - 1])
-            rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
+            rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)  # QGraphicsRectItem
 
             # We need access to the QGraphicsRectItem inorder to later call
             # removeItem(). However, we also need access to the QRectF object
@@ -1364,7 +1365,7 @@ class Viewer(QtWidgets.QWidget):
             # Finally, we need to keep track of the window side length for each selections
             # as it is user configurable
             self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
-            self.LEEDclickpos.append((xmp, ymp))  # store x,y coordinate of mouse click in array coordinates
+            self.LEEDclickpos.append((xmp, ymp))  # store x, y coordinate of mouse click in array coordinates
             print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
 
     def handleLEEDClick(self, event):
@@ -1429,21 +1430,26 @@ class Viewer(QtWidgets.QWidget):
         """Plot I(V) from User selections."""
         if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
             return
+        if len(self.LEEDrects) != len(self.LEEDclickpos):
+            print("Error: Number of LEED widnows does not match number of stored click positions")
+            return
         for idx, tup in enumerate(self.LEEDclickpos):
             # center coordinates
             xc = tup[0]
             yc = tup[1]
 
-            rad = self.LEEDrects[idx][3]
+            # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
+            rad = int(self.LEEDrects[idx][3])  # cast to int to ensure array indexing uses ints
 
-            # top left corner
+            # top left corner in array coordinates
             xtl = xc - rad
             ytl = yc - rad
 
             int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
                                             xtl:xtl + 2*rad + 1, :]
-            # ilist = [img.sum()/float(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
-            ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            # store average intensity per window
+            ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+            # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
             self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=2))
@@ -1551,4 +1557,7 @@ class Viewer(QtWidgets.QWidget):
         """Display LEED image from main data array at index=idx."""
         if idx not in range(self.leeddat.dat3d.shape[2] - 1):
             return
-        self.LEEDimage.setImage(self.leeddat.dat3d[:, :, idx])
+
+        # see note in instance method update_LEED_img_after_load()
+        # for why the displayed image uses a horizontal flip + transpose
+        self.LEEDimage.setImage(self.leeddat.dat3d[::-1, :, idx].T)
