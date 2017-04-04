@@ -25,7 +25,7 @@ from please import MainWindow
 
 
 __Version = '1.0.0'
-__imgorder = 'row-major'  # pyqtgraph global setting
+# __imgorder = 'row-major'  # pyqtgraph global setting
 
 
 def custom_exception_handler(exc_type, exc_value, exc_traceback):
@@ -46,7 +46,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
 
     # pyqtgraph settings
-    pg.setConfigOption('imageAxisOrder', __imgorder)
+    # pg.setConfigOption('imageAxisOrder', __imgorder)
 
     # print("Creating Please App ...")
     mw = MainWindow(v=__Version)
