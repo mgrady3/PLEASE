@@ -130,6 +130,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.disableLEEMRectAction.triggered.connect(self.viewer.disableLEEMWindow)
         LEEMMenu.addAction(self.disableLEEMRectAction)
 
+        self.clearWindowsAction = QtWidgets.QAction("Clear Windows", self)
+        self.clearWindowsAction.triggered.connect(self.viewer.clearLEEMWindows)
+        LEEMMenu.addAction(self.clearWindowsAction)
+
         self.extractLEEMWindowAction = QtWidgets.QAction("Extract I(V) from Windows", self)
         self.extractLEEMWindowAction.triggered.connect(self.viewer.extractLEEMWindows)
         self.extractLEEMWindowAction.setEnabled(self.viewer.LEEMRectWindowEnabled)
@@ -1088,19 +1092,9 @@ class Viewer(QtWidgets.QWidget):
         if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
             return
 
-        if len(self.LEEMRects) >= len(self.qcolors):
-            # already reached maximum number of Rect windows.
-            # reset then begin again
-            for tup in self.LEEMRects:
-                # first item in container is rectitem
-                self.LEEMimageplotwidget.scene().removeItem(tup[0])
-            for circ in self.LEEMcircs:
-                self.LEEMimageplotwidget.scene().removeItem(circ)
-            self.LEEMclicks = 0
-            self.LEEMcircs = []
-            self.LEEMselections = []
-            self.LEEMRectCount = 0
-            self.LEEMRects = []
+        if len(self.qcolors) <= len(self.LEEMRects):
+            print("Maximum number of LEEM windows reached. Please clear current windows.")
+            return
 
         self.LEEMclicks += 1
 
@@ -1115,6 +1109,14 @@ class Viewer(QtWidgets.QWidget):
             circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
             self.LEEMcircs.append(circ)
             self.firstclickLEEM = (x, y)
+            # translate to array coordinates
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedpoint = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedpoint.x())
+            ymp = int(mappedpoint.y())
+            # invert y to set top edge as y=0
+            ymp = self.leemdat.dat3d.shape[0] - 1 - ymp
+            self.firstclickLEEMarray = (xmp, ymp)
 
         elif self.LEEMclicks == 2:
             # Use second location to draw rectangle
@@ -1122,6 +1124,14 @@ class Viewer(QtWidgets.QWidget):
             x = pos.x()
             y = pos.y()
             self.secondclickLEEM = (x, y)
+            # translate to array coordinates
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedpoint = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedpoint.x())
+            ymp = int(mappedpoint.y())
+            # invert y to set top edge as y=0
+            ymp = self.leemdat.dat3d.shape[0] - 1 - ymp
+            self.secondclickLEEMarray = (xmp, ymp)
 
             # Determine rect orientation
             if (self.secondclickLEEM[0] > self.firstclickLEEM[0] and
@@ -1130,6 +1140,9 @@ class Viewer(QtWidgets.QWidget):
                 # first click is top left, second is bottom right
                 topleft = self.firstclickLEEM
                 bottomright = self.secondclickLEEM
+                # get location in array coordinates
+                topleftarray = self.firstclickLEEMarray
+                bottomrightarray = self.secondclickLEEMarray
                 width = bottomright[0] - topleft[0]
                 height = bottomright[1] - topleft[1]
 
@@ -1141,6 +1154,9 @@ class Viewer(QtWidgets.QWidget):
                 height = self.firstclickLEEM[1] - self.secondclickLEEM[1]
                 topleft = (self.firstclickLEEM[0], self.secondclickLEEM[1])
                 bottomright = (self.secondclickLEEM[0], self.firstclickLEEM[1])
+                # get location in array coordinates
+                topleftarray = (self.firstclickLEEMarray[0], self.secondclickLEEMarray[1])
+                bottomrightarray = (self.secondclickLEEMarray[0], self.firstclickLEEMarray[1])
 
             elif (self.secondclickLEEM[0] < self.firstclickLEEM[0] and
                   self.secondclickLEEM[1] > self.firstclickLEEM[1]):
@@ -1150,6 +1166,9 @@ class Viewer(QtWidgets.QWidget):
                 height = self.secondclickLEEM[1] - self.firstclickLEEM[1]
                 topleft = (self.secondclickLEEM[0], self.firstclickLEEM[1])
                 bottomright = (self.firstclickLEEM[0], self.secondclickLEEM[1])
+                # get location in array coordinates
+                topleftarray = (self.secondclickLEEMarray[0], self.firstclickLEEMarray[1])
+                bottomrightarray = (self.firstclickLEEMarray[0], self.secondclickLEEMarray[1])
 
             elif (self.secondclickLEEM[0] < self.firstclickLEEM[0] and
                   self.secondclickLEEM[1] < self.firstclickLEEM[1]):
@@ -1159,7 +1178,9 @@ class Viewer(QtWidgets.QWidget):
                 bottomright = self.firstclickLEEM
                 width = bottomright[0] - topleft[0]
                 height = bottomright[1] - topleft[1]
-
+                # get location in array coordinates
+                topleft = self.secondclickLEEMarray
+                bottomright = self.firstclickLEEMarray
             else:
                 # invlaid location for second click; Either width or height would be zero
                 self.LEEMclicks -= 1
@@ -1174,7 +1195,7 @@ class Viewer(QtWidgets.QWidget):
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[self.LEEMRectCount - 1])
             rectitem = self.LEEMimageplotwidget.scene().addRect(rect, pen=pen)
-            self.LEEMRects.append((rectitem, rect, pen))
+            self.LEEMRects.append((rectitem, rect, pen, topleftarray, bottomrightarray))
             self.LEEMclicks = 0
             for circ in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(circ)
@@ -1186,13 +1207,14 @@ class Viewer(QtWidgets.QWidget):
             return
         self.LEEMivplotwidget.clear()
         for tup in self.LEEMRects:
-            # QRectF object is second item in container
-            rect = tup[1]
-            topleft = rect.topLeft()
-            xtl = int(topleft.x())
-            ytl = int(topleft.y())
-            width = int(rect.width())
-            height = int(rect.height())
+            topleft = tup[3]
+            bottomright = tup[4]
+            xtl = int(topleft[0])
+            ytl = int(topleft[1])
+            width = int(bottomright[0] - xtl)
+            height = int(bottomright[1] - ytl)
+            print("Topleft: {}".format(topleft))
+            print("Bottomright: {}".format(bottomright))
             print("Window Selected: x={0}, y={1}, width={2}, height={3}".format(xtl, ytl, width, height))
             window = self.leemdat.dat3d[ytl:ytl + height + 1,
                                         xtl:xtl + width + 1, :]
@@ -1432,6 +1454,20 @@ class Viewer(QtWidgets.QWidget):
             self.staticLEEMplot.close()
             self.staticLEEMplot = pg.PlotWidget()  # reset to new plot instance but don't call show()
             self.staticLEEMplot.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
+    def clearLEEMWindows(self):
+        """Clear LEEM rectangular windows."""
+        for tup in self.LEEMRects:
+            # first item in container is rectitem
+            self.LEEMimageplotwidget.scene().removeItem(tup[0])
+        for circ in self.LEEMcircs:
+            self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMivplotwidget.clear()
+        self.LEEMclicks = 0
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        self.LEEMRects = []
 
     def keyPressEvent(self, event):
         """Set Arrow keys for navigation."""
