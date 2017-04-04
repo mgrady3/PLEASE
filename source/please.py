@@ -775,6 +775,9 @@ class Viewer(QtWidgets.QWidget):
                         print("Error: One or more threads has not finished file I/O ...")
                         return
             self.threads = []
+            if len(self.LEEDrects) != len(self.LEEDclickpos):
+                print("Error: number of LEED widnows does not match number of Click coordinates.")
+                return
             for idx, tup in enumerate(self.LEEDclickpos):
                 outfile = os.path.join(outdir, outname+str(idx)+'.txt')
                 rad = self.LEEDrects[idx][3]
