@@ -1087,6 +1087,45 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMRectWindowEnabled = False
         self.parentWidget().extractLEEMWindowAction.setEnabled(False)
 
+    def handleLEEMWindow2(self, event):
+        """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
+        if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
+            return
+        if len(self.qcolors) <= len(self.LEEMRects):
+            print("MAximum number of LEEM Selections reached. Please clear current selection.")
+            return
+
+        if self.LEEMclicks == 0:
+            # this was the first click
+
+            brush = QtGui.QBrush(self.qcolors[len(self.LEEMRects)])
+            pos = event.pos()
+            rad = 8
+            # account for offset in patch location from QRectF
+            x = pos.x() - rad/2
+            y = pos.y() - rad/2
+            # create circular patch
+            circ = self.LEEMimageplotwidget.scene().addElipse(x, y, rad, rad, brush=brush)
+            self.LEEMcircs.append(circ)
+            self.firstclick = (x, y)  # position of center of patch for first clicks
+            # mapped coordinates for first click:
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.firstclickmap = (xmp, ymp)  # location of first click in array coordinates
+            self.LEEMclicks += 1
+            return
+
+        elif self.LEEMclicks == 1:
+            # this is the second click
+            self.secondclick = (event.pos().x(), event.pos().y())
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.secondclickmap = (xmp, ymp)  # location of second click in array coordinates
+
     def handleLEEMWindow(self, event):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
         if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
