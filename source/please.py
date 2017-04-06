@@ -139,6 +139,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.extractLEEMWindowAction.setEnabled(self.viewer.LEEMRectWindowEnabled)
         LEEMMenu.addAction(self.extractLEEMWindowAction)
 
+        self.enableLEEMLinesAction = QtWidgets.QAction("Enable LEEM Line Profile", self)
+        self.enableLEEMLinesAction.triggered.connect(self.viewer.enableLEEMLineProfile)
+        LEEMMenu.addAction(self.enableLEEMLinesAction)
+
+        self.disableLEEMLinesAction = QtWidgets.QAction("Disable LEEM Line Profile", self)
+        self.disableLEEMLinesAction.triggered.connect(self.viewer.disableLEEMLineProfile)
+        LEEMMenu.addAction(self.disableLEEMLinesAction)
+
+
+
         self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
         LEEMMenu.addAction(self.toggleLEEMReflectivityAction)
@@ -225,8 +235,10 @@ class Viewer(QtWidgets.QWidget):
         self.leeddat = LeedData()
         self.LEEMselections = []  # store coords of leem clicks
         self.LEEDclickpos = []  # store coords of leed clicks
+        self.LEEMRects = []
         self.LEEMRectWindowEnabled = False
         self.LEEMLineProfileEnabled = False
+        self.LEEMLines = []  # container for QGraphicsLineItem objects
 
         self.smoothLEEDplot = False
         self.smoothLEEMplot = False
@@ -1191,7 +1203,54 @@ class Viewer(QtWidgets.QWidget):
 
     def handleLEEMLineProfile(self, event):
         """Create QGraphicsLineItem objects from user click positions."""
-        pass
+        if not self.hasdisplayedLEEMdata:
+            return
+        if len(self.qcolors) <= len(self.LEEMLines):
+            print("Maximum number of LEEM Line Selection reached. Please clear current selections.")
+            return
+        if self.LEEMclicks == 0:
+            # This was the first click
+            brush = QtGui.QBrush(self.qcolors[len(self.LEEMLines)])
+            pos = event.pos()
+            rad = 8
+            # account for offset in patch location from QRectF
+            x = pos.x() - rad/2
+            y = pos.y() - rad/2
+            # create circular patch
+            circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
+            self.LEEMcircs.append(circ)
+            self.firstclick = (x, y)  # position of center of patch for first clicks
+            # mapped coordinates for first click:
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.firstclickmap = (xmp, ymp)  # location of first click in array coordinates
+            self.LEEMclicks += 1
+            return
+        elif self.LEEMclicks == 1:
+            # This is the second click
+            pos = event.pos()
+            self.secondclick = (pos.x(), pos.y())  # scene position
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.secondclickmap = (xmp, ymp)  # array coordinates
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            # pen.setBrush(QtCore.Qt.red)
+            pen.setColor(self.qcolors[len(self.LEEMLines)])
+            line = self.LEEMimageplotwidget.scene().addLine(self.firstclick[0], self.firstclick[1],
+                     self.secondclick[0], self.secondclick[1], pen=pen)
+            self.LEEMLines.append(line)
+
+            if self.LEEMcircs:
+                for circ in self.LEEMcircs:
+                    self.LEEMimageplotwidget.scene().removeItem(circ)
+            self.LEEMclicks = 0
+
 
 
     def handleLEEMClick(self, event):
