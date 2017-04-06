@@ -82,9 +82,19 @@ def getRectCorners(pt1, pt2):
         return (pt2, pt1)
     elif pt1[0] < pt2[0] and pt1[1] > pt2[1]:
         # pt1 is bottom left, pt2 is top right
-        return (())
-
-
+        height = pt1[1] - pt2[1]
+        tl = (pt1[0], pt1[1] - height)
+        br = (pt2[0], pt2[1] + height)
+        return (tl, br)
+    elif pt1[0] > pt2[0] and pt1[1] < pt2[1]:
+        # pt1 is top right, pt2 is bottom left
+        height = pt2[1] - pt1[1]
+        tl = (pt2[0], pt2[1] - height)
+        br = (pt1[0], pt1[1] + height])
+        return (tl, br)
+    else:
+        # Invalid coordinates: either width or height = 0
+        return None
 
 
 def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte='L'):
