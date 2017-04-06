@@ -90,7 +90,7 @@ def getRectCorners(pt1, pt2):
         # pt1 is top right, pt2 is bottom left
         height = pt2[1] - pt1[1]
         tl = (pt2[0], pt2[1] - height)
-        br = (pt1[0], pt1[1] + height])
+        br = (pt1[0], pt1[1] + height)
         return (tl, br)
     else:
         # Invalid coordinates: either width or height = 0

@@ -3,7 +3,7 @@
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: March, 2017
+Date: April, 2017
 
 PLEASE provides a convienient Graphical User Interface for exploration and
 analysis of Low Energy Electron Microscopy and Diffraction data sets.
@@ -299,50 +299,12 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMTabLayout.addLayout(ivvbox)
         self.LEEMTab.setLayout(self.LEEMTabLayout)
 
-        # ivheight = self.LEEMivplotwidget.frameGeometry().height()
-        # ivwidth = self.LEEMivplotwidget.frameGeometry().width()
-        # self.LEEMimageplotwidget.setMaximumHeight(ivheight)
-        # self.LEEMimageplotwidget.setSizePolicy()
-
     def initConfigTab(self):
         """Setup Layout of Config Tab."""
         # configTabGroupbox = QtWidgets.QGroupBox()
         configtabBottomButtonHBox = QtWidgets.QHBoxLayout()
         # configTabGroupButtonBox = QtWidgets.QHBoxLayout()
         configTabVBox = QtWidgets.QVBoxLayout()
-
-        """
-        self.quitbut = QtWidgets.QPushButton("Quit", self)
-        # self.quitbut.clicked.connect(self.Quit)
-
-        self.setEnergyLEEMBut = QtWidgets.QPushButton("Set LEEM Energy", self)
-        # self.setEnergyLEEMBut.clicked.connect(lambda: pass)
-
-        self.setEnergyLEEDBut = QtWidgets.QPushButton("Set LEED Energy", self)
-        # self.setEnergyLEEDBut.clicked.connect(lambda: pass)
-
-        self.toggleDebugBut = QtWidgets.QPushButton("Toggle DEBUG mode")
-        # self.toggleDebugBut.clicked.connect(lambda: pass)
-
-        self.swapLEEMByteOrderBut = QtWidgets.QPushButton("Swap LEEM Byte Order")
-        # self.swapLEEMByteOrderBut.clicked.connect(lambda: pass)
-
-        self.swapLEEDByteOrderBut = QtWidgets.QPushButton("Swap LEED Byte Order")
-        # self.swapLEEDByteOrderBut.clicked.connect(lambda: pass)
-
-        buttons = [self.setEnergyLEEMBut, self.setEnergyLEEDBut,
-                   self.toggleDebugBut, self.swapLEEDByteOrderBut,
-                   self.swapLEEMByteOrderBut]
-
-        configTabGroupButtonBox.addStretch()
-        for b in buttons:
-            configTabGroupButtonBox.addWidget(b)
-            configTabGroupButtonBox.addStretch()
-        configTabGroupbox.setLayout(configTabGroupButtonBox)
-
-        configTabVBox.addWidget(configTabGroupbox)
-        configTabVBox.addWidget(self.h_line())
-        """
 
         # smooth settings
         smoothLEEDVBox = QtWidgets.QVBoxLayout()
@@ -464,12 +426,7 @@ class Viewer(QtWidgets.QWidget):
     def initLEEDTab(self):
         """Setup Layout of LEED Tab."""
         self.LEEDTabLayout = QtWidgets.QHBoxLayout()
-        """
-        self.LEEDimageplotwidget = pg.PlotWidget()
-        self.LEEDimageplotwidget.setTitle("LEED Reciprocal Space Image",
-                                          size='18pt', color='#FFFFFF')
-        self.LEEDTabLayout.addWidget(self.LEEDimageplotwidget)
-        """
+
         self.imvbox = QtWidgets.QVBoxLayout()
         self.ivvbox = QtWidgets.QVBoxLayout()
 
@@ -1034,7 +991,7 @@ class Viewer(QtWidgets.QWidget):
             # This is ok. Here we just want to disable the default mouse click behaviour
             pass
 
-        self.sigmcLEEM.connect(self.handleLEEMWindow)
+        self.sigmcLEEM.connect(self.handleLEEMWindow2)
 
         # move cropsshair away from image area
         self.crosshair.vline.setPos(0)
@@ -1092,7 +1049,7 @@ class Viewer(QtWidgets.QWidget):
         if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
             return
         if len(self.qcolors) <= len(self.LEEMRects):
-            print("MAximum number of LEEM Selections reached. Please clear current selection.")
+            print("Maximum number of LEEM Selections reached. Please clear current selection.")
             return
 
         if self.LEEMclicks == 0:
@@ -1105,7 +1062,7 @@ class Viewer(QtWidgets.QWidget):
             x = pos.x() - rad/2
             y = pos.y() - rad/2
             # create circular patch
-            circ = self.LEEMimageplotwidget.scene().addElipse(x, y, rad, rad, brush=brush)
+            circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
             self.LEEMcircs.append(circ)
             self.firstclick = (x, y)  # position of center of patch for first clicks
             # mapped coordinates for first click:
@@ -1125,6 +1082,28 @@ class Viewer(QtWidgets.QWidget):
             xmp = int(mappedclick.x())
             ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
             self.secondclickmap = (xmp, ymp)  # location of second click in array coordinates
+
+            rectcoords = LF.getRectCorners(self.firstclick, self.secondclick)
+            rectcoordsmap = LF.getRectCorners(self.firstclickmap, self.secondclickmap)
+            topleft = rectcoords[0]  # scene coordinates
+            topleftmap = rectcoordsmap[0]  # array coordinates
+            bottomright = rectcoords[1]  # scene coordinates
+            bottomrightmap = rectcoordsmap[1] # array coordinates
+            width = bottomright[0] - topleft[0]
+            height = bottomright[1] - topleft[1]
+            rect = QtCore.QRectF(topleft[0], topleft[1], width, height)
+            self.LEEMRectCount += 1
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            # pen.setBrush(QtCore.Qt.red)
+            pen.setColor(self.qcolors[self.LEEMRectCount - 1])
+            rectitem = self.LEEMimageplotwidget.scene().addRect(rect, pen=pen)
+            self.LEEMRects.append((rectitem, rect, pen, topleftmap, bottomrightmap))
+            self.LEEMclicks = 0
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+            self.LEEMcircs = []
 
     def handleLEEMWindow(self, event):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
@@ -1257,7 +1236,7 @@ class Viewer(QtWidgets.QWidget):
             print("Window Selected: x={0}, y={1}, width={2}, height={3}".format(xtl, ytl, width, height))
             window = self.leemdat.dat3d[ytl:ytl + height + 1,
                                         xtl:xtl + width + 1, :]
-            ilist = [img.sum() for img in np.rollaxis(window, 2)]
+            ilist = [img.sum()/(width*height) for img in np.rollaxis(window, 2)]
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
             self.LEEMivplotwidget.plot(self.leemdat.elist, ilist, pen=pg.mkPen(tup[2].color(), width=2))
