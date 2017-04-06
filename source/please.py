@@ -215,7 +215,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDrects = []  # stored as tuple (rect, pen)
         self.LEEDclicks = 0
         self.LEEDclickpos = []  # container for position of LEED clicks in array coordinate system
-        self.boxrad = 20  # Integration windows are rectangles 2*boxrad x 2*boxrad
+        self.boxrad = 20  # USER configurable setting for LEED integration window: 2*boxrad x 2*boxrad
 
         self.threads = []  # container for QThread objects used for outputting files
 
@@ -223,9 +223,10 @@ class Viewer(QtWidgets.QWidget):
         self.qcolors = Palette().qcolors
         self.leemdat = LeemData()
         self.leeddat = LeedData()
-        self.LEEMselections = []  # store coords of leem clicks in (r,c) format
-        self.LEEDclickpos = []  # store coords of leed clicks in (r,c) format
+        self.LEEMselections = []  # store coords of leem clicks
+        self.LEEDclickpos = []  # store coords of leed clicks
         self.LEEMRectWindowEnabled = False
+        self.LEEMLineProfileEnabled = False
 
         self.smoothLEEDplot = False
         self.smoothLEEMplot = False
@@ -997,7 +998,7 @@ class Viewer(QtWidgets.QWidget):
         self.crosshair.vline.setPos(0)
         self.crosshair.hline.setPos(0)
 
-        # remove any ucrrent LEEM clicks
+        # remove any current LEEM clicks
         self.LEEMclicks = 0
         if self.LEEMcircs:
             for circ in self.LEEMcircs:
@@ -1126,6 +1127,72 @@ class Viewer(QtWidgets.QWidget):
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
             self.LEEMivplotwidget.plot(self.leemdat.elist, ilist, pen=pg.mkPen(tup[2].color(), width=2))
+
+    def enableLEEMLineProfile(self):
+        """Enable fixed energy contrast analysis along a straight line segment.
+
+        Disable/reroute current LEEM mouse behavaiour to stop tracking mouse motion and implement a new click hadler.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable mousemovement tracking
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable the default mouse click behaviour
+            pass
+
+        self.sigmcLEEM.connect(self.handleLEEMLineProfile)
+
+        # move cropsshair away from image area
+        self.crosshair.vline.setPos(0)
+        self.crosshair.hline.setPos(0)
+
+        # remove any current LEEM clicks
+        self.LEEMclicks = 0
+        if self.LEEMcircs:
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        if self.LEEMRects:
+            for item in self.LEEMRects:
+                self.LEEMimageplotwidget.scene().removeItem(item[0])
+        self.LEEMRects = []
+        self.LEEMLineProfileEnabled = True
+
+    def disableLEEMLineProfile(self):
+        """Disable fixed energy contrast analysis.
+
+        Reinstate default mouse click and movement behaviour.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse movement tracking handler
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse click handler
+            pass
+        # Reset Mouse event signals to default behaviour
+        self.sigmcLEEM.connect(self.handleLEEMClick)
+        self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+
+    def handleLEEMLineProfile(self, event):
+        """Create QGraphicsLineItem objects from user click positions."""
+        pass
+
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
