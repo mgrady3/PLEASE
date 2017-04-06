@@ -1348,16 +1348,17 @@ class Viewer(QtWidgets.QWidget):
 
     def clearLEEMIV(self):
         """Clear User selections from LEEM image and clear IV plot."""
-        self.staticLEEMplot.clear()
-        self.LEEMclicks = 0
-        self.LEEMselections = []
         if self.LEEMcircs:
             for item in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(item)
+        self.staticLEEMplot.clear()
         if self.staticLEEMplot.isVisible():
             self.staticLEEMplot.close()
             self.staticLEEMplot = pg.PlotWidget()  # reset to new plot instance but don't call show()
             self.staticLEEMplot.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.LEEMclicks = 0
+        self.LEEMselections = []
+        self.LEEMcircs = []
 
     def clearLEEMWindows(self):
         """Clear LEEM rectangular windows."""
