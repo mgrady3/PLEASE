@@ -11,13 +11,14 @@
 # Release Targets
 Version 1.0.0 :
 * Features to be ported from Legacy codebase
-    * LEEM Line Profile Analysis (moderately difficult)
-    * LEEM Rectangular Windows (easy)
+    * ~~LEEM Line Profile Analysis~~ (moderately difficult) Implemented in dev branch (April 2017)
+    * ~~LEEM Rectangular Windows~~ (easy) Implemented in dev branch (April 2017)
     * LEED Beam averaging (easy)
-    * LEED Background analysis (easy - but needs some effort to streamline old code)
+    * ~~LEED Background analysis~~ (easy - but needs some effort to streamline old code) Implemented in dev branch (April 2017)
 
 Future:
 * Possible Features for future releases
+    * LEED-I(V) Background window selection automation
     * LEEM Line Profile I(V) extraction automation
     * LEEM/LEED data in HDF5 format
     * File Format conversion automation
