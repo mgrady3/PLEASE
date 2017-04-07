@@ -25,6 +25,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 # local project imports
 import LEEMFUNCTIONS as LF
+from bline import bline
 from configinfo import output_environment_config
 from colors import Palette
 from data import LeedData, LeemData
@@ -147,7 +148,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.disableLEEMLinesAction.triggered.connect(self.viewer.disableLEEMLineProfile)
         LEEMMenu.addAction(self.disableLEEMLinesAction)
 
+        self.clearLEEMLineProfileAction = QtWidgets.QAction("Clear Line Profiles", self)
+        self.clearLEEMLineProfileAction.triggered.connect(self.viewer.clearLEEMLines)
+        LEEMMenu.addAction(self.clearLEEMLineProfileAction)
 
+        self.extractLEEMLineProfileAction = QtWidgets.QAction("Extract Line Profile", self)
+        self.extractLEEMLineProfileAction.triggered.connect(self.viewer.extractLEEMLineProfiles)
+        LEEMMenu.addAction(self.extractLEEMLineProfileAction)
 
         self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
@@ -1101,7 +1108,7 @@ class Viewer(QtWidgets.QWidget):
             topleft = rectcoords[0]  # scene coordinates
             topleftmap = rectcoordsmap[0]  # array coordinates
             bottomright = rectcoords[1]  # scene coordinates
-            bottomrightmap = rectcoordsmap[1] # array coordinates
+            bottomrightmap = rectcoordsmap[1]  # array coordinates
             width = bottomright[0] - topleft[0]
             height = bottomright[1] - topleft[1]
             rect = QtCore.QRectF(topleft[0], topleft[1], width, height)
@@ -1197,6 +1204,11 @@ class Viewer(QtWidgets.QWidget):
             # This is ok, and we can continue to reconnect this signal to the
             # LEEM mouse click handler
             pass
+        for item in self.LEEMLines:
+            self.LEEMimageplotwidget.scene().removeItem(item[0])
+        self.LEEMLines = []
+        self.LEEMivplotwidget.clear()
+        self.LEEMivplotwidget.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
         # Reset Mouse event signals to default behaviour
         self.sigmcLEEM.connect(self.handleLEEMClick)
         self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
@@ -1243,15 +1255,34 @@ class Viewer(QtWidgets.QWidget):
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[len(self.LEEMLines)])
             line = self.LEEMimageplotwidget.scene().addLine(self.firstclick[0], self.firstclick[1],
-                     self.secondclick[0], self.secondclick[1], pen=pen)
-            self.LEEMLines.append(line)
+                                                            self.secondclick[0], self.secondclick[1], pen=pen)
+
+            self.LEEMLines.append((line, self.firstclickmap, self.secondclickmap))
 
             if self.LEEMcircs:
                 for circ in self.LEEMcircs:
                     self.LEEMimageplotwidget.scene().removeItem(circ)
+            self.LEEMcircs = []
             self.LEEMclicks = 0
 
-
+    def extractLEEMLineProfiles(self):
+        """Use Bressenham Algorithm to get all array points along the User selected lines."""
+        if not self.hasdisplayedLEEMdata or not self.LEEMLineProfileEnabled:
+            return
+        self.LEEMivplotwidget.clear()
+        for idx, item in enumerate(self.LEEMLines):
+            pt1 = item[1]
+            pt2 = item[2]
+            points = bline(pt1[0], pt1[1], pt2[0], pt2[1])
+            ilist = []
+            for point in points:
+                ilist.append(self.leemdat.dat3d[point[1], point[0], self.curLEEMIndex])
+            if self.smoothLEEMplot:
+                ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
+            pen = pg.mkPen(self.qcolors[idx], width=2)
+            pdi = pg.PlotDataItem(list(range(len(points))), ilist, pen=pen)
+            self.LEEMivplotwidget.addItem(pdi)
+            self.LEEMivplotwidget.setLabel('bottom', 'Distance Along Line', units='[arb. units]', **self.labelStyle)
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
@@ -1499,6 +1530,18 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMselections = []
         self.LEEMRectCount = 0
         self.LEEMRects = []
+
+    def clearLEEMLines(self):
+        """Clear QGraphicsLineItems from LEEMimageplotwidget."""
+        if self.LEEMLines:
+            for item in self.LEEMLines:
+                self.LEEMimageplotwidget.scene().removeItem(item[0])
+        if self.LEEMcircs:
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMLines = []
+        self.LEEMclicks = 0
+        self.LEEMcircs = []
 
     def keyPressEvent(self, event):
         """Set Arrow keys for navigation."""
