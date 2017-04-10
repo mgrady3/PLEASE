@@ -45,6 +45,7 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
   * Byte Order (Required for loading raw data) [string] {"L" for little endian, "B" for big endian}
   * Data path [string pointing to folder containing data files]
 
+An example file and instructions for creating your own experiment configuration files can be found in the subdirectory Experiment-YAML of this repository. Finally, a few test data sets are provided to ensure PLEASE is functioning properly. Each of these sets is accompanied by a .yaml experiemnt configuration file that must be edited with he correct data paths.
 
  # Contributing
  PLEASE was written and developed as a project for my doctoral research. As such, I am the only developer on the project. However, I welcome any and all contributions to this software package. I have included the main features which were relevant to my research, however, there will likely be more that I have missed. With each new experiment I became involved in, the software grew accordingly. However, I have been the primary tester for the software. I welcome others to try the software and provide feedback.
