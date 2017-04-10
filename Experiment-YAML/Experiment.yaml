@@ -1,0 +1,16 @@
+Experiment:
+     Type: LEEM
+     Name: "Graphene_on_Ruthenium"
+     Data Type: "Raw"
+     File Format: ".dat"
+     Image Parameters:
+          Height: 1200
+          Width: 1200
+     Energy Parameters:
+          Min: -9.9
+          Max: 15.0
+          Step: 0.1
+     Data Path: "/Users/Username/Data/Experiments/Graphene_on_Ruthenium/"
+     # Additional required parameters since Raw was chosen as data type
+     Bit Size: 16
+     Byte Order: "L"
