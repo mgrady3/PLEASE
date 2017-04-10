@@ -14,6 +14,7 @@ These methods are independent of the GUI and thus not contained in please.py
 import os
 import numpy as np
 from PIL import Image
+from PyQt5 import QtCore
 
 # deprecated
 DEF_IMHEIGHT = 600
@@ -59,6 +60,40 @@ def energy_to_filenumber(el, val):
         return el.index(val)
     except ValueError:
         print("Error: the value, {0}, does not appear in energy list.".format(val))
+        return None
+
+
+def getRectCorners(pt1, pt2):
+    """Get coordinates of top left and bottom right corners given any two corners of a rectangle."""
+    if not isinstance(pt1, (QtCore.QPointF, tuple)) or not isinstance(pt2, (QtCore.QPointF, tuple)):
+        print("Error: pt1 and pt2 must be both either tuples or QPointF objects")
+        return None
+    if isinstance(pt1, QtCore.QPointF):
+        pt1 = (pt1.x(), pt1.y())
+    if isinstance(pt2, QtCore.QPointF):
+        pt2 = (pt2.x(), pt2.y())
+    # now pt1 and pt2 should be both tuples
+
+    if pt1[0] < pt2[0] and pt1[1] < pt2[1]:
+        # pt1 is top left, pt2 is bottom right
+        return (pt1, pt2)  # ((tl), (br))
+    elif pt1[0] > pt2[0] and pt1[1] > pt2[1]:
+        # pt1 is bottom right, pt2 is top left
+        return (pt2, pt1)
+    elif pt1[0] < pt2[0] and pt1[1] > pt2[1]:
+        # pt1 is bottom left, pt2 is top right
+        height = pt1[1] - pt2[1]
+        tl = (pt1[0], pt1[1] - height)
+        br = (pt2[0], pt2[1] + height)
+        return (tl, br)
+    elif pt1[0] > pt2[0] and pt1[1] < pt2[1]:
+        # pt1 is top right, pt2 is bottom left
+        height = pt2[1] - pt1[1]
+        tl = (pt2[0], pt2[1] - height)
+        br = (pt1[0], pt1[1] + height)
+        return (tl, br)
+    else:
+        # Invalid coordinates: either width or height = 0
         return None
 
 

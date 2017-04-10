@@ -3,7 +3,7 @@
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: March, 2017
+Date: April, 2017
 
 PLEASE provides a convienient Graphical User Interface for exploration and
 analysis of Low Energy Electron Microscopy and Diffraction data sets.
@@ -25,6 +25,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 # local project imports
 import LEEMFUNCTIONS as LF
+from bline import bline
 from configinfo import output_environment_config
 from colors import Palette
 from data import LeedData, LeemData
@@ -130,10 +131,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.disableLEEMRectAction.triggered.connect(self.viewer.disableLEEMWindow)
         LEEMMenu.addAction(self.disableLEEMRectAction)
 
+        self.clearWindowsAction = QtWidgets.QAction("Clear Windows", self)
+        self.clearWindowsAction.triggered.connect(self.viewer.clearLEEMWindows)
+        LEEMMenu.addAction(self.clearWindowsAction)
+
         self.extractLEEMWindowAction = QtWidgets.QAction("Extract I(V) from Windows", self)
         self.extractLEEMWindowAction.triggered.connect(self.viewer.extractLEEMWindows)
         self.extractLEEMWindowAction.setEnabled(self.viewer.LEEMRectWindowEnabled)
         LEEMMenu.addAction(self.extractLEEMWindowAction)
+
+        self.enableLEEMLinesAction = QtWidgets.QAction("Enable LEEM Line Profile", self)
+        self.enableLEEMLinesAction.triggered.connect(self.viewer.enableLEEMLineProfile)
+        LEEMMenu.addAction(self.enableLEEMLinesAction)
+
+        self.disableLEEMLinesAction = QtWidgets.QAction("Disable LEEM Line Profile", self)
+        self.disableLEEMLinesAction.triggered.connect(self.viewer.disableLEEMLineProfile)
+        LEEMMenu.addAction(self.disableLEEMLinesAction)
+
+        self.clearLEEMLineProfileAction = QtWidgets.QAction("Clear Line Profiles", self)
+        self.clearLEEMLineProfileAction.triggered.connect(self.viewer.clearLEEMLines)
+        LEEMMenu.addAction(self.clearLEEMLineProfileAction)
+
+        self.extractLEEMLineProfileAction = QtWidgets.QAction("Extract Line Profile", self)
+        self.extractLEEMLineProfileAction.triggered.connect(self.viewer.extractLEEMLineProfiles)
+        LEEMMenu.addAction(self.extractLEEMLineProfileAction)
 
         self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
@@ -148,6 +169,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearAction = QtWidgets.QAction("Clear I(V)", self)
         self.clearAction.triggered.connect(self.viewer.clearLEEDIV)
         LEEDMenu.addAction(self.clearAction)
+
+        self.averageIVAction = QtWidgets.QAction("Average IV", self)
+        self.averageIVAction.triggered.connect(self.viewer.averageLEEDIV)
+        LEEDMenu.addAction(self.averageIVAction)
 
         self.toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
@@ -210,7 +235,8 @@ class Viewer(QtWidgets.QWidget):
         # container for QRectF patches to be drawn atop LEEDimage
         self.LEEDrects = []  # stored as tuple (rect, pen)
         self.LEEDclicks = 0
-        self.boxrad = 20  # Integration windows are rectangles 2*boxrad x 2*boxrad
+        self.LEEDclickpos = []  # container for position of LEED clicks in array coordinate system
+        self.boxrad = 20  # USER configurable setting for LEED integration window: 2*boxrad x 2*boxrad
 
         self.threads = []  # container for QThread objects used for outputting files
 
@@ -218,9 +244,12 @@ class Viewer(QtWidgets.QWidget):
         self.qcolors = Palette().qcolors
         self.leemdat = LeemData()
         self.leeddat = LeedData()
-        self.LEEMselections = []  # store coords of leem clicks in (r,c) format
-        self.LEEDselections = []  # store coords of leed clicks in (r,c) format
+        self.LEEMselections = []  # store coords of leem clicks
+        self.LEEDclickpos = []  # store coords of leed clicks
+        self.LEEMRects = []
         self.LEEMRectWindowEnabled = False
+        self.LEEMLineProfileEnabled = False
+        self.LEEMLines = []  # container for QGraphicsLineItem objects
 
         self.smoothLEEDplot = False
         self.smoothLEEMplot = False
@@ -230,6 +259,9 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMWindowType = 'flat'
         self.LEEDWindowLen = 4
         self.LEEMWindowLen = 4
+
+        self.LEEDAverageIV = []
+        self.outputLEEDAverage = False
 
         self.exp = None  # overwritten on load with Experiment object
         self.hasdisplayedLEEMdata = False
@@ -294,50 +326,9 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMTabLayout.addLayout(ivvbox)
         self.LEEMTab.setLayout(self.LEEMTabLayout)
 
-        # ivheight = self.LEEMivplotwidget.frameGeometry().height()
-        # ivwidth = self.LEEMivplotwidget.frameGeometry().width()
-        # self.LEEMimageplotwidget.setMaximumHeight(ivheight)
-        # self.LEEMimageplotwidget.setSizePolicy()
-
     def initConfigTab(self):
         """Setup Layout of Config Tab."""
-        # configTabGroupbox = QtWidgets.QGroupBox()
-        configtabBottomButtonHBox = QtWidgets.QHBoxLayout()
-        # configTabGroupButtonBox = QtWidgets.QHBoxLayout()
         configTabVBox = QtWidgets.QVBoxLayout()
-
-        """
-        self.quitbut = QtWidgets.QPushButton("Quit", self)
-        # self.quitbut.clicked.connect(self.Quit)
-
-        self.setEnergyLEEMBut = QtWidgets.QPushButton("Set LEEM Energy", self)
-        # self.setEnergyLEEMBut.clicked.connect(lambda: pass)
-
-        self.setEnergyLEEDBut = QtWidgets.QPushButton("Set LEED Energy", self)
-        # self.setEnergyLEEDBut.clicked.connect(lambda: pass)
-
-        self.toggleDebugBut = QtWidgets.QPushButton("Toggle DEBUG mode")
-        # self.toggleDebugBut.clicked.connect(lambda: pass)
-
-        self.swapLEEMByteOrderBut = QtWidgets.QPushButton("Swap LEEM Byte Order")
-        # self.swapLEEMByteOrderBut.clicked.connect(lambda: pass)
-
-        self.swapLEEDByteOrderBut = QtWidgets.QPushButton("Swap LEED Byte Order")
-        # self.swapLEEDByteOrderBut.clicked.connect(lambda: pass)
-
-        buttons = [self.setEnergyLEEMBut, self.setEnergyLEEDBut,
-                   self.toggleDebugBut, self.swapLEEDByteOrderBut,
-                   self.swapLEEMByteOrderBut]
-
-        configTabGroupButtonBox.addStretch()
-        for b in buttons:
-            configTabGroupButtonBox.addWidget(b)
-            configTabGroupButtonBox.addStretch()
-        configTabGroupbox.setLayout(configTabGroupButtonBox)
-
-        configTabVBox.addWidget(configTabGroupbox)
-        configTabVBox.addWidget(self.h_line())
-        """
 
         # smooth settings
         smoothLEEDVBox = QtWidgets.QVBoxLayout()
@@ -449,22 +440,30 @@ class Viewer(QtWidgets.QWidget):
         RectSettingGroupBox.setLayout(LEEDRectSettingHBox)
         configTabVBox.addWidget(RectSettingGroupBox)
 
+        # LEED Average Settings
+        AverageSettingGroupBox = QtWidgets.QGroupBox()
+        LEEDAverageSettingHBox = QtWidgets.QHBoxLayout()
+        LEEDAverageSettingVBox = QtWidgets.QVBoxLayout()
+        AverageSettingLabel = QtWidgets.QLabel("Enable LEED Average for File Output")
+        LEEDAverageSettingVBox.addWidget(AverageSettingLabel)
+        self.LEEDAverageToggleBox = QtWidgets.QCheckBox()
+        self.LEEDAverageToggleBox.stateChanged.connect(self.averageStateChanged)
+        LEEDAverageSettingVBox.addWidget(self.LEEDAverageToggleBox)
+        LEEDAverageSettingHBox.addLayout(LEEDAverageSettingVBox)
+        LEEDAverageSettingHBox.addStretch()
+        AverageSettingGroupBox.setLayout(LEEDAverageSettingHBox)
+
+        configTabVBox.addWidget(self.h_line())
+        configTabVBox.addWidget(AverageSettingGroupBox)
+
         configTabVBox.addStretch()
 
-        configtabBottomButtonHBox.addStretch(1)
-        # configtabBottomButtonHBox.addWidget(self.quitbut)
-        configTabVBox.addLayout(configtabBottomButtonHBox)
         self.ConfigTab.setLayout(configTabVBox)
 
     def initLEEDTab(self):
         """Setup Layout of LEED Tab."""
         self.LEEDTabLayout = QtWidgets.QHBoxLayout()
-        """
-        self.LEEDimageplotwidget = pg.PlotWidget()
-        self.LEEDimageplotwidget.setTitle("LEED Reciprocal Space Image",
-                                          size='18pt', color='#FFFFFF')
-        self.LEEDTabLayout.addWidget(self.LEEDimageplotwidget)
-        """
+
         self.imvbox = QtWidgets.QVBoxLayout()
         self.ivvbox = QtWidgets.QVBoxLayout()
 
@@ -728,8 +727,8 @@ class Viewer(QtWidgets.QWidget):
             self.threads = []
             for idx, tup in enumerate(self.LEEMselections):
                 outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                x = tup[1]
-                y = tup[0]
+                x = tup[0]
+                y = tup[1]
                 ilist = self.leemdat.dat3d[y, x, :]
                 if self.smoothLEEMoutput:
                     ilist = LF.smooth(ilist,
@@ -743,7 +742,13 @@ class Viewer(QtWidgets.QWidget):
                 self.threads.append(thread)
                 thread.start()
 
-        elif datatype == 'LEED' and self.hasdisplayedLEEDdata and self.LEEDselections:
+        elif datatype == 'LEED' and self.hasdisplayedLEEDdata and self.LEEDclickpos:
+            if self.outputLEEDAverage and not self.LEEDAverageIV:
+                # no average I(V) to output
+                print("Warning: Configuration Setting to Output Average I(V) is enabled.")
+                print("However, no average has been calculated.")
+                print("Please disbale averaging or average current I(V) curves.")
+                return
             # Query User for output directory
             # PyQt5 - This method now returns a tuple - we want only the first element
             outdir = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory",
@@ -774,17 +779,15 @@ class Viewer(QtWidgets.QWidget):
                         print("Error: One or more threads has not finished file I/O ...")
                         return
             self.threads = []
-            for idx, tup in enumerate(self.LEEDselections):
-                outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                x = int(tup[1])
-                y = int(tup[0])
-                int_window = self.leeddat.dat3d[y - self.boxrad:y + self.boxrad + 1,
-                                                x - self.boxrad:x + self.boxrad + 1, :]
-                ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            if self.outputLEEDAverage and self.LEEDAverageIV:
+                # output single curve
+                outfile = os.path.join(outdir, outname+'.txt')
                 if self.smoothLEEDoutput:
-                    ilist = LF.smooth(ilist,
+                    ilist = LF.smooth(self.LEEDAverageIV,
                                       window_len=self.LEEDWindowLen,
                                       window_type=self.LEEDWindowType)
+                else:
+                    ilist = self.LEEDAverageIV
                 thread = WorkerThread(task='OUTPUT_TO_TEXT',
                                            elist=self.leeddat.elist,
                                            ilist=ilist,
@@ -792,6 +795,31 @@ class Viewer(QtWidgets.QWidget):
                 thread.finished.connect(self.output_complete)
                 self.threads.append(thread)
                 thread.start()
+            else:
+                # output multiple curves
+                if len(self.LEEDrects) != len(self.LEEDclickpos):
+                    print("Error: number of LEED widnows does not match number of Click coordinates.")
+                    return
+                for idx, tup in enumerate(self.LEEDclickpos):
+                    outfile = os.path.join(outdir, outname+str(idx)+'.txt')
+                    rad = self.LEEDrects[idx][3]
+                    x = int(tup[0])
+                    y = int(tup[1])
+                    int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
+                                                    x - rad:x + rad + 1, :]
+                    # get average intensity per window
+                    ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                    if self.smoothLEEDoutput:
+                        ilist = LF.smooth(ilist,
+                                          window_len=self.LEEDWindowLen,
+                                          window_type=self.LEEDWindowType)
+                    thread = WorkerThread(task='OUTPUT_TO_TEXT',
+                                               elist=self.leeddat.elist,
+                                               ilist=ilist,
+                                               name=outfile)
+                    thread.finished.connect(self.output_complete)
+                    self.threads.append(thread)
+                    thread.start()
 
     def validate_smoothing_settings(self, but=None):
         """Validate User input from Config Tab smoothing settings."""
@@ -884,6 +912,14 @@ class Viewer(QtWidgets.QWidget):
                 self.smoothLEEMoutput = False
             return
 
+    @QtCore.pyqtSlot()
+    def averageStateChanged(self):
+        """Toggle boolean flag for outputting average LEED IV."""
+        if self.LEEDAverageToggleBox.isChecked():
+            self.outputLEEDAverage = True
+        else:
+            self.outputLEEDAverage = False
+
     @staticmethod
     @QtCore.pyqtSlot()
     def output_complete():
@@ -923,9 +959,15 @@ class Viewer(QtWidgets.QWidget):
             self.LEEMimageplotwidget.getPlotItem().clear()
 
         self.curLEEMIndex = self.leemdat.dat3d.shape[2]//2
-        self.LEEMimage = pg.ImageItem(self.leemdat.dat3d[:,
-                                                         :,
-                                                         self.curLEEMIndex])
+
+        # pyqtgraph displays the array rotated 90 degrees CCW. To force the display to match the original array we
+        # display a rotated + flipped array so that the image is displayed correctly
+        # see the following discussion on the pyqtgraph forum for more information
+        # https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/pyqtgraph/aMQW16vF9Os/mmILDzCyCAAJ
+        # Pyqtgraph interprets array data as [width, height]. So we apply a horizontal flip via [::-1, :]
+        # then transpose the flipped array. This is equivalent to a 90 degree rotation in the CCW direction.
+
+        self.LEEMimage = pg.ImageItem(self.leemdat.dat3d[::-1, :, self.curLEEMIndex].T)
         self.LEEMimageplotwidget.addItem(self.LEEMimage)
         self.LEEMimageplotwidget.hideAxis('bottom')
         self.LEEMimageplotwidget.hideAxis('left')
@@ -961,9 +1003,15 @@ class Viewer(QtWidgets.QWidget):
             return
 
         self.curLEEDIndex = self.leeddat.dat3d.shape[2]//2
-        self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[:,
-                                                         :,
-                                                         self.curLEEDIndex])
+
+        # pyqtgraph displays the array rotated 90 degrees CCW. To force the display to match the original array we
+        # display a rotated + flipped array so that the image is displayed correctly
+        # see the following discussion on the pyqtgraph forum for more information
+        # https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/pyqtgraph/aMQW16vF9Os/mmILDzCyCAAJ
+        # Pyqtgraph interprets array data as [width, height]. So we apply a horizontal flip via [::-1, :]
+        # then transpose the flipped array. This is equivalent to a 90 degree rotation in the CCW direction.
+
+        self.LEEDimage = pg.ImageItem(self.leeddat.dat3d[::-1, :, self.curLEEDIndex].T)
         self.LEEDimagewidget.addItem(self.LEEDimage)
         self.LEEDimagewidget.hideAxis('bottom')
         self.LEEDimagewidget.hideAxis('left')
@@ -1018,7 +1066,7 @@ class Viewer(QtWidgets.QWidget):
         self.crosshair.vline.setPos(0)
         self.crosshair.hline.setPos(0)
 
-        # remove any ucrrent LEEM clicks
+        # remove any current LEEM clicks
         self.LEEMclicks = 0
         if self.LEEMcircs:
             for circ in self.LEEMcircs:
@@ -1069,94 +1117,58 @@ class Viewer(QtWidgets.QWidget):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
         if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
             return
+        if len(self.qcolors) <= len(self.LEEMRects):
+            print("Maximum number of LEEM Selections reached. Please clear current selection.")
+            return
 
-        if len(self.LEEMRects) >= len(self.qcolors):
-            # already reached maximum number of Rect windows.
-            # reset then begin again
-            for tup in self.LEEMRects:
-                # first item in container is rectitem
-                self.LEEMimageplotwidget.scene().removeItem(tup[0])
-            for circ in self.LEEMcircs:
-                self.LEEMimageplotwidget.scene().removeItem(circ)
-            self.LEEMclicks = 0
-            self.LEEMcircs = []
-            self.LEEMselections = []
-            self.LEEMRectCount = 0
-            self.LEEMRects = []
+        if self.LEEMclicks == 0:
+            # this was the first click
 
-        self.LEEMclicks += 1
-
-        if self.LEEMclicks == 1:
-            # mark location of first click
-            pos = event.pos()
             brush = QtGui.QBrush(self.qcolors[len(self.LEEMRects)])
+            pos = event.pos()
             rad = 8
-            x = pos.x() - rad/2  # offset for QRectF
-            y = pos.y() - rad/2  # offset for QRectF
-
+            # account for offset in patch location from QRectF
+            x = pos.x() - rad/2
+            y = pos.y() - rad/2
+            # create circular patch
             circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
             self.LEEMcircs.append(circ)
-            self.firstclickLEEM = (x, y)
+            self.firstclick = (x, y)  # position of center of patch for first clicks
+            # mapped coordinates for first click:
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.firstclickmap = (xmp, ymp)  # location of first click in array coordinates
+            self.LEEMclicks += 1
+            return
 
-        elif self.LEEMclicks == 2:
-            # Use second location to draw rectangle
-            pos = event.pos()
-            x = pos.x()
-            y = pos.y()
-            self.secondclickLEEM = (x, y)
+        elif self.LEEMclicks == 1:
+            # this is the second click
+            self.secondclick = (event.pos().x(), event.pos().y())
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.secondclickmap = (xmp, ymp)  # location of second click in array coordinates
 
-            # Determine rect orientation
-            if (self.secondclickLEEM[0] > self.firstclickLEEM[0] and
-               self.secondclickLEEM[1] > self.firstclickLEEM[1]):
-
-                # first click is top left, second is bottom right
-                topleft = self.firstclickLEEM
-                bottomright = self.secondclickLEEM
-                width = bottomright[0] - topleft[0]
-                height = bottomright[1] - topleft[1]
-
-            elif (self.secondclickLEEM[0] > self.firstclickLEEM[0] and
-                  self.secondclickLEEM[1] < self.firstclickLEEM[1]):
-
-                # first click is bottom left, second is top right
-                width = self.secondclickLEEM[0] - self.firstclickLEEM[0]
-                height = self.firstclickLEEM[1] - self.secondclickLEEM[1]
-                topleft = (self.firstclickLEEM[0], self.secondclickLEEM[1])
-                bottomright = (self.secondclickLEEM[0], self.firstclickLEEM[1])
-
-            elif (self.secondclickLEEM[0] < self.firstclickLEEM[0] and
-                  self.secondclickLEEM[1] > self.firstclickLEEM[1]):
-
-                # first click is top right, second is bottom left
-                width = self.firstclickLEEM[0] - self.secondclickLEEM[0]
-                height = self.secondclickLEEM[1] - self.firstclickLEEM[1]
-                topleft = (self.secondclickLEEM[0], self.firstclickLEEM[1])
-                bottomright = (self.firstclickLEEM[0], self.secondclickLEEM[1])
-
-            elif (self.secondclickLEEM[0] < self.firstclickLEEM[0] and
-                  self.secondclickLEEM[1] < self.firstclickLEEM[1]):
-
-                # first click is bottom right, second is top left
-                topleft = self.secondclickLEEM
-                bottomright = self.firstclickLEEM
-                width = bottomright[0] - topleft[0]
-                height = bottomright[1] - topleft[1]
-
-            else:
-                # invlaid location for second click; Either width or height would be zero
-                self.LEEMclicks -= 1
-                return
-
-            self.LEEMRectCount += 1
-            # construct rect
+            rectcoords = LF.getRectCorners(self.firstclick, self.secondclick)
+            rectcoordsmap = LF.getRectCorners(self.firstclickmap, self.secondclickmap)
+            topleft = rectcoords[0]  # scene coordinates
+            topleftmap = rectcoordsmap[0]  # array coordinates
+            bottomright = rectcoords[1]  # scene coordinates
+            bottomrightmap = rectcoordsmap[1]  # array coordinates
+            width = bottomright[0] - topleft[0]
+            height = bottomright[1] - topleft[1]
             rect = QtCore.QRectF(topleft[0], topleft[1], width, height)
+            self.LEEMRectCount += 1
             pen = QtGui.QPen()
             pen.setStyle(QtCore.Qt.SolidLine)
             pen.setWidth(4)
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[self.LEEMRectCount - 1])
             rectitem = self.LEEMimageplotwidget.scene().addRect(rect, pen=pen)
-            self.LEEMRects.append((rectitem, rect, pen))
+            self.LEEMRects.append((rectitem, rect, pen, topleftmap, bottomrightmap))
             self.LEEMclicks = 0
             for circ in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(circ)
@@ -1168,20 +1180,158 @@ class Viewer(QtWidgets.QWidget):
             return
         self.LEEMivplotwidget.clear()
         for tup in self.LEEMRects:
-            # QRectF object is second item in container
-            rect = tup[1]
-            topleft = rect.topLeft()
-            xtl = int(topleft.x())
-            ytl = int(topleft.y())
-            width = int(rect.width())
-            height = int(rect.height())
+            topleft = tup[3]
+            bottomright = tup[4]
+            xtl = int(topleft[0])
+            ytl = int(topleft[1])
+            width = int(bottomright[0] - xtl)
+            height = int(bottomright[1] - ytl)
+            print("Topleft: {}".format(topleft))
+            print("Bottomright: {}".format(bottomright))
             print("Window Selected: x={0}, y={1}, width={2}, height={3}".format(xtl, ytl, width, height))
             window = self.leemdat.dat3d[ytl:ytl + height + 1,
                                         xtl:xtl + width + 1, :]
-            ilist = [img.sum() for img in np.rollaxis(window, 2)]
+            ilist = [img.sum()/(width*height) for img in np.rollaxis(window, 2)]
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
             self.LEEMivplotwidget.plot(self.leemdat.elist, ilist, pen=pg.mkPen(tup[2].color(), width=2))
+
+    def enableLEEMLineProfile(self):
+        """Enable fixed energy contrast analysis along a straight line segment.
+
+        Disable/reroute current LEEM mouse behavaiour to stop tracking mouse motion and implement a new click hadler.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable mousemovement tracking
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable the default mouse click behaviour
+            pass
+
+        self.sigmcLEEM.connect(self.handleLEEMLineProfile)
+
+        # move cropsshair away from image area
+        self.crosshair.vline.setPos(0)
+        self.crosshair.hline.setPos(0)
+
+        # remove any current LEEM clicks
+        self.LEEMclicks = 0
+        if self.LEEMcircs:
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        if self.LEEMRects:
+            for item in self.LEEMRects:
+                self.LEEMimageplotwidget.scene().removeItem(item[0])
+        self.LEEMRects = []
+        self.LEEMLineProfileEnabled = True
+
+    def disableLEEMLineProfile(self):
+        """Disable fixed energy contrast analysis.
+
+        Reinstate default mouse click and movement behaviour.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse movement tracking handler
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse click handler
+            pass
+        for item in self.LEEMLines:
+            self.LEEMimageplotwidget.scene().removeItem(item[0])
+        self.LEEMLines = []
+        self.LEEMivplotwidget.clear()
+        self.LEEMivplotwidget.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
+        # Reset Mouse event signals to default behaviour
+        self.sigmcLEEM.connect(self.handleLEEMClick)
+        self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+
+    def handleLEEMLineProfile(self, event):
+        """Create QGraphicsLineItem objects from user click positions."""
+        if not self.hasdisplayedLEEMdata:
+            return
+        if len(self.qcolors) <= len(self.LEEMLines):
+            print("Maximum number of LEEM Line Selection reached. Please clear current selections.")
+            return
+        if self.LEEMclicks == 0:
+            # This was the first click
+            brush = QtGui.QBrush(self.qcolors[len(self.LEEMLines)])
+            pos = event.pos()
+            rad = 8
+            # account for offset in patch location from QRectF
+            x = pos.x() - rad/2
+            y = pos.y() - rad/2
+            # create circular patch
+            circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
+            self.LEEMcircs.append(circ)
+            self.firstclick = (x, y)  # position of center of patch for first clicks
+            # mapped coordinates for first click:
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.firstclickmap = (xmp, ymp)  # location of first click in array coordinates
+            self.LEEMclicks += 1
+            return
+        elif self.LEEMclicks == 1:
+            # This is the second click
+            pos = event.pos()
+            self.secondclick = (pos.x(), pos.y())  # scene position
+            vb = self.LEEMimageplotwidget.getPlotItem().getViewBox()
+            mappedclick = vb.mapSceneToView(event.scenePos())
+            xmp = int(mappedclick.x())
+            ymp = self.leemdat.dat3d.shape[0] - 1 - int(mappedclick.y())
+            self.secondclickmap = (xmp, ymp)  # array coordinates
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            # pen.setBrush(QtCore.Qt.red)
+            pen.setColor(self.qcolors[len(self.LEEMLines)])
+            line = self.LEEMimageplotwidget.scene().addLine(self.firstclick[0], self.firstclick[1],
+                                                            self.secondclick[0], self.secondclick[1], pen=pen)
+
+            self.LEEMLines.append((line, self.firstclickmap, self.secondclickmap))
+
+            if self.LEEMcircs:
+                for circ in self.LEEMcircs:
+                    self.LEEMimageplotwidget.scene().removeItem(circ)
+            self.LEEMcircs = []
+            self.LEEMclicks = 0
+
+    def extractLEEMLineProfiles(self):
+        """Use Bressenham Algorithm to get all array points along the User selected lines."""
+        if not self.hasdisplayedLEEMdata or not self.LEEMLineProfileEnabled:
+            return
+        self.LEEMivplotwidget.clear()
+        for idx, item in enumerate(self.LEEMLines):
+            pt1 = item[1]
+            pt2 = item[2]
+            points = bline(pt1[0], pt1[1], pt2[0], pt2[1])
+            ilist = []
+            for point in points:
+                ilist.append(self.leemdat.dat3d[point[1], point[0], self.curLEEMIndex])
+            if self.smoothLEEMplot:
+                ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
+            pen = pg.mkPen(self.qcolors[idx], width=2)
+            pdi = pg.PlotDataItem(list(range(len(points))), ilist, pen=pen)
+            self.LEEMivplotwidget.addItem(pdi)
+            self.LEEMivplotwidget.setLabel('bottom', 'Distance Along Line', units='[arb. units]', **self.labelStyle)
 
     def handleLEEMClick(self, event):
         """User click registered in LEEMimage area.
@@ -1201,16 +1351,10 @@ class Viewer(QtWidgets.QWidget):
         if event.currentItem is None:
             return
 
+        if len(self.qcolors) <= self.LEEMclicks:
+            print("Maximum number of LEEM selections. Please clear current selections.")
+            return
         self.LEEMclicks += 1
-        if self.LEEMclicks > len(self.qcolors):
-            self.LEEMclicks = 1
-            if self.staticLEEMplot.isVisible():
-                self.staticLEEMplot.clear()
-            if self.LEEMcircs:
-                for circ in self.LEEMcircs:
-                    self.LEEMimageplotwidget.scene().removeItem(circ)
-            self.LEEMcircs = []
-            self.LEEMselections = []
 
         pos = event.pos()
         mappedPos = self.LEEMimage.mapFromScene(pos)
@@ -1227,9 +1371,12 @@ class Viewer(QtWidgets.QWidget):
             try:
                 # mouse position
                 xmp = self.currentLEEMPos[0]
-                ymp = self.currentLEEMPos[1]  # x and y in data coordinates
+                ymp = self.currentLEEMPos[1]  # x and y in array coordinates (top edge is y=0)
             except IndexError:
                 return
+        else:
+            print("Error: Failed to get currentLEEMPos for LEEMClick().")
+            return
         xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]
         if self.smoothLEEMplot:
@@ -1243,14 +1390,14 @@ class Viewer(QtWidgets.QWidget):
         circ = self.LEEMimageplotwidget.scene().addEllipse(x, y, rad, rad, brush=brush)
         # print("Click at x={0}, y={1}".format(x, y))
         self.LEEMcircs.append(circ)
-        self.LEEMselections.append((ymp, xmp))  # (r,c) format
+        self.LEEMselections.append((xmp, ymp))  # (x, y format)
 
         pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=2)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
+        self.staticLEEMplot.addItem(pdi)
         self.staticLEEMplot.setTitle("LEEM-I(V)")
         self.staticLEEMplot.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
         self.staticLEEMplot.setLabel('left', 'Intensity', units='a.u.', **self.labelStyle)
-        self.staticLEEMplot.addItem(pdi)
         if not self.staticLEEMplot.isVisible():
             self.staticLEEMplot.show()
 
@@ -1277,17 +1424,19 @@ class Viewer(QtWidgets.QWidget):
             return  # discard  movement events originating outside the image
 
         # update crosshair
-        self.crosshair.curPos = (xmp, ymp)
+        self.crosshair.curPos = (xmp, ymp)  # place cross hair with y coordinate in reference to bottom edge as y=0
         self.crosshair.vline.setPos(xmp)
         self.crosshair.hline.setPos(ymp)
+
+        # convert to array (numpy) y coordinate by inverting the y value
+        ymp = self.leemdat.dat3d.shape[0] - 1 - ymp
         self.currentLEEMPos = (xmp, ymp)  # used for handleLEEMClick()
-        # print("Mouse moved to: {0}, {1}".format(xmp, ymp))
+        # print("Mouse moved to: {0}, {1}".format(xmp, ymp))  # array coordinates
 
         # update IV plot
         xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]  # raw unsmoothed data
-        # print("Mouse Location - Mapped Coordinates: x={0}, y={1}".format(xmp, ymp))
-        # print("Mouse Location - Unmapped Coordinates: x={0}, y={1}".format(int(pos.x()), int(pos.y())))
+
         if self.rescaleLEEMIntensity:
             ydata = [point/float(max(ydata)) for point in ydata]
         if self.smoothLEEMplot and not self.leemdat.posMask[ymp, xmp]:
@@ -1308,80 +1457,128 @@ class Viewer(QtWidgets.QWidget):
 
     def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""
-        if not self.hasdisplayedLEEDdata:
+        if not self.hasdisplayedLEEDdata or event.currentItem is None:
             return
 
-        # clicking outside image area may cause event.currentItem
-        # to be None. This would then raise an error when trying to
-        # call event.pos()
-        if event.currentItem is None:
+        # Ensure number of LEED windows remains less than the max colors
+        if len(self.qcolors) <= self.LEEDclicks:
+            print("Maximum number of LEED Windows Reached. Please clear current selections.")
             return
 
         self.LEEDclicks += 1
-        if self.LEEDclicks > len(self.qcolors):
-            self.LEEDclicks = 1
-            if self.LEEDrects:
-                for tup in self.LEEDrects:
-                    # first item in container is the rectitem
-                    self.LEEDimagewidget.scene().removeItem(tup[0])
-            self.LEEDrects = []
+        pos = event.pos()  # scene position
+        x = int(pos.x())
+        y = int(pos.y())
 
-        pos = event.pos()
-        mappedPos = self.LEEMimage.mapFromScene(pos)
-        xmapfs = int(mappedPos.x())
-        ymapfs = int(mappedPos.y())
+        viewbox = self.LEEDimagewidget.getPlotItem().getViewBox()
+        mappedPos = viewbox.mapSceneToView(event.scenePos())  # position in array coordinates
+        xmp = int(mappedPos.x())
+        ymp = int(mappedPos.y())
 
-        if xmapfs < 0 or \
-           xmapfs > self.leeddat.dat3d.shape[1] or \
-           ymapfs < 0 or \
-           ymapfs > self.leeddat.dat3d.shape[0]:
-            return  # discard click events originating outside the image
-        xp = pos.x()
-        yp = pos.y()
-        """
-        pos = self.LEEDimage.mapFromScene(event.scenePos())
-        xp = int(pos.x())
-        yp = int(pos.y())
-        """
-        topleftcorner = QtCore.QPointF(xp - self.boxrad,
-                                       yp - self.boxrad)
-        rect = QtCore.QRectF(topleftcorner.x(), topleftcorner.y(),
-                             2*self.boxrad, 2*self.boxrad)
+        # pyqtgraph uses bottom edge as y=0; this converts the coordinate to the numpy system
+        ymp = (self.leeddat.dat3d.shape[0] - 1) - ymp
 
-        pen = QtGui.QPen()
-        pen.setStyle(QtCore.Qt.SolidLine)
-        pen.setWidth(4)
-        # pen.setBrush(QtCore.Qt.red)
-        pen.setColor(self.qcolors[self.LEEDclicks - 1])
-        rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
+        # check to see if click is too close to edge
+        if (xmp - self.boxrad < 0 or xmp + self.boxrad >= self.leeddat.dat3d.shape[1] or
+           ymp - self.boxrad < 0 or ymp + self.boxrad >= self.leeddat.dat3d.shape[0]):
+            print("Error: Click registered too close to image edge.")
+            print("Reduce window size or choose alternate extraction point")
+            self.LEEDclicks -= 1
+            return
 
-        # We need access to the QGraphicsRectItem inorder to later call
-        # removeItem(). However, we also need access to the QRectF object
-        # in order to get coordinates. Thus we store a reference to both along
-        # with the pen used for coloring the Rect.
-        # Finally, we need to keep track of the window side length for each selections
-        # as it is user configurable
+        if xmp >= 0 and xmp < self.leeddat.dat3d.shape[1] - 1 and \
+           ymp >= 0 and ymp < self.leeddat.dat3d.shape[0] - 1:
+            # valid array coordinates
 
-        self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
+            # QGraphicsRectItem is drawn using the scene coordinates (x, y)
+            topleftcorner = QtCore.QPointF(x - self.boxrad,
+                                           y - self.boxrad)
+            rect = QtCore.QRectF(topleftcorner.x(), topleftcorner.y(),
+                                 2*self.boxrad, 2*self.boxrad)
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            # pen.setBrush(QtCore.Qt.red)
+            pen.setColor(self.qcolors[self.LEEDclicks - 1])
+            rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)  # QGraphicsRectItem
+
+            # We need access to the QGraphicsRectItem inorder to later call
+            # removeItem(). However, we also need access to the QRectF object
+            # in order to get coordinates. Thus we store a reference to both along
+            # with the pen used for coloring the Rect.
+            # Finally, we need to keep track of the window side length for each selections
+            # as it is user configurable
+            self.LEEDrects.append((rectitem, rect, pen, self.boxrad))
+            self.LEEDclickpos.append((xmp, ymp))  # store x, y coordinate of mouse click in array coordinates
+            # print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
-        if not self.hasdisplayedLEEDdata or not self.LEEDrects:
+        if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
             return
+        if len(self.LEEDrects) != len(self.LEEDclickpos):
+            print("Error: Number of LEED widnows does not match number of stored click positions")
+            return
+        for idx, tup in enumerate(self.LEEDclickpos):
+            # center coordinates
+            xc = tup[0]
+            yc = tup[1]
 
-        for idx, tup in enumerate(self.LEEDrects):
-            sidelength = 2*tup[3]
-            center = tup[1].center()
-            self.LEEDselections.append((center.y(), center.x()))
-            topleft = tup[1].topLeft()
-            xtl = int(topleft.x())
-            ytl = int(topleft.y())
-            int_window = self.leeddat.dat3d[ytl:ytl+sidelength+1,
-                                            xtl:xtl+sidelength+1, :]
-            ilist = [img.sum()/float(int_window.shape[0]*int_window.shape[1]) for img in np.rollaxis(int_window, 2)]
+            # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
+            rad = int(self.LEEDrects[idx][3])  # cast to int to ensure array indexing uses ints
+
+            # top left corner in array coordinates
+            xtl = xc - rad
+            ytl = yc - rad
+
+            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
+                                            xtl:xtl + 2*rad + 1, :]
+            # store average intensity per window
+            ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+            # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=2))
+            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=3))
+
+    def averageLEEDIV(self):
+        """Extract IV from current user selections and average the curves."""
+        if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
+            return
+        if len(self.LEEDrects) != len(self.LEEDclickpos):
+            print("Error: Number of LEED widnows does not match number of stored click positions")
+            return
+        if len(self.LEEDrects) == 1:
+            print("Averaging LEED I(V) curves requires more than one selection.")
+            return
+        curves = []
+        for idx, tup in enumerate(self.LEEDclickpos):
+            # center coordinates
+            xc = tup[0]
+            yc = tup[1]
+
+            # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
+            rad = int(self.LEEDrects[idx][3])  # cast to int to ensure array indexing uses ints
+
+            # top left corner in array coordinates
+            xtl = int(xc - rad)
+            ytl = int(yc - rad)
+            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
+                                            xtl:xtl + 2*rad + 1, :]
+            # store average intensity per window
+            ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+            # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            curves.append(ilist)
+        self.LEEDAverageIV = list(map(lambda l: sum(l)/float(len(l)), zip(*curves)))
+        if self.smoothLEEDplot:
+            self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                       LF.smooth(self.LEEDAverageIV,
+                                                 window_len=self.LEEDWindowLen,
+                                                 window_type=self.LEEDWindowType),
+                                       pen=pg.mkPen(self.qcolors[0], width=3))
+        else:
+            self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                       self.LEEDAverageIV,
+                                       pen=pg.mkPen(self.qcolors[0], width=3))
 
     def clearLEEDIV(self):
         """Triggered by menu action to clear all LEED selections."""
@@ -1391,17 +1588,50 @@ class Viewer(QtWidgets.QWidget):
             for tup in self.LEEDrects:
                 self.LEEDimagewidget.scene().removeItem(tup[0])
             self.LEEDrects = []
-            self.LEEDselections = []
+            self.LEEDclickpos = []
             self.LEEDclicks = 0
+            self.LEEDclickpos = []
+            self.LEEDAverageIV = []
 
     def clearLEEMIV(self):
         """Clear User selections from LEEM image and clear IV plot."""
-        self.staticLEEMplot.clear()
-        self.LEEMclicks = 0
-        self.LEEMselections = []
         if self.LEEMcircs:
             for item in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(item)
+        self.staticLEEMplot.clear()
+        if self.staticLEEMplot.isVisible():
+            self.staticLEEMplot.close()
+            self.staticLEEMplot = pg.PlotWidget()  # reset to new plot instance but don't call show()
+            self.staticLEEMplot.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.LEEMclicks = 0
+        self.LEEMselections = []
+        self.LEEMcircs = []
+
+    def clearLEEMWindows(self):
+        """Clear LEEM rectangular windows."""
+        for tup in self.LEEMRects:
+            # first item in container is rectitem
+            self.LEEMimageplotwidget.scene().removeItem(tup[0])
+        for circ in self.LEEMcircs:
+            self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMivplotwidget.clear()
+        self.LEEMclicks = 0
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        self.LEEMRects = []
+
+    def clearLEEMLines(self):
+        """Clear QGraphicsLineItems from LEEMimageplotwidget."""
+        if self.LEEMLines:
+            for item in self.LEEMLines:
+                self.LEEMimageplotwidget.scene().removeItem(item[0])
+        if self.LEEMcircs:
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMLines = []
+        self.LEEMclicks = 0
+        self.LEEMcircs = []
 
     def keyPressEvent(self, event):
         """Set Arrow keys for navigation."""
@@ -1460,10 +1690,16 @@ class Viewer(QtWidgets.QWidget):
         """Display LEEM image from main data array at index=idx."""
         if idx not in range(self.leemdat.dat3d.shape[2] - 1):
             return
-        self.LEEMimage.setImage(self.leemdat.dat3d[:, :, idx])
+
+        # see note in instance method update_LEEM_img_after_load()
+        # for why the displayed image uses a horizontal flip + transpose
+        self.LEEMimage.setImage(self.leemdat.dat3d[::-1, :, idx].T)
 
     def showLEEDImage(self, idx):
         """Display LEED image from main data array at index=idx."""
         if idx not in range(self.leeddat.dat3d.shape[2] - 1):
             return
-        self.LEEDimage.setImage(self.leeddat.dat3d[:, :, idx])
+
+        # see note in instance method update_LEED_img_after_load()
+        # for why the displayed image uses a horizontal flip + transpose
+        self.LEEDimage.setImage(self.leeddat.dat3d[::-1, :, idx].T)

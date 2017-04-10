@@ -1,0 +1,18 @@
+Experiment:
+
+    Type:  "LEEM"
+    Name:  "testdata"
+    Data Type:  "Raw"
+    File Format:  ".dat"
+    Image Parameters:
+        Height:  600
+        Width:  600
+    Energy Parameters:
+        Min:  0.0
+        Max:  100.0
+        Step:  1.0
+    Data Path:  "/Users/Maxwell/Desktop/LEEMTestData/dat/"
+
+# Optional Parameters or Required based on choice of above parameters
+    Bit Size:  8
+    Byte Order:  "B"
