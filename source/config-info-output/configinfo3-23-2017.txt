@@ -1,0 +1,43 @@
+# User Runtime Configuration Settings # 
+User Platform Info: 
+
+{   'cpu': 'i386',
+    'machine_type': 'x86_64',
+    'python_version': '3.5.2',
+    'system': 'Darwin',
+    'system_version': 'Darwin Kernel Version 15.6.0: Mon Jan  9 23:07:29 PST '
+                      '2017; root:xnu-3248.60.11.2.1~1/RELEASE_X86_64'}
+No $PYTHONPATH set
+
+Using Anaconda Python or Miniconda from Continuum Analytics = True
+Note- If Using Anaconda or Miniconda:	The conda environment settings are written to a separate file: Environment.yaml
+
+Pip Installed Modules: 
+	cycler==0.10.0
+	flake8==3.2.1
+	flake8-docstrings==1.0.3
+	flake8-polyfill==1.0.1
+	llvmlite==0.15.0
+	matplotlib==2.0.0
+	mccabe==0.5.3
+	Nuitka==0.5.25
+	numba==0.30.1
+	numpy==1.11.3
+	pandas==0.19.2
+	pendulum==1.1.0
+	Pillow==4.0.0
+	pycodestyle==2.2.0
+	pydocstyle==1.1.1
+	pyflakes==1.3.0
+	pyparsing==2.1.4
+	pyqtdeploy==1.3.1
+	pyqtgraph==0.10.0
+	python-dateutil==2.6.0
+	pytz==2016.10
+	pytzdata==2017.1
+	PyYAML==3.12
+	scipy==0.18.1
+	seaborn==0.7.1
+	six==1.10.0
+	tzlocal==1.3
+	

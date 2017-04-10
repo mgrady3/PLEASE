@@ -4,7 +4,7 @@ PLEASE - The Python Low-energy Electron Analysis SuitE.
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: March, 2017
+Date: April, 2017
 
 Module containing classes which act as containers for
 LEED and LEEM data sets. Each objects has a main data
