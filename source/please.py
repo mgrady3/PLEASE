@@ -170,6 +170,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearAction.triggered.connect(self.viewer.clearLEEDIV)
         LEEDMenu.addAction(self.clearAction)
 
+        self.averageIVAction = QtWidgets.QAction("Average IV", self)
+        self.averageIVAction.triggered.connect(self.viewer.averageLEEDIV)
+        LEEDMenu.addAction(self.averageIVAction)
+
         self.toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
         LEEDMenu.addAction(self.toggleLEEDReflectivityAction)
@@ -256,6 +260,9 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDWindowLen = 4
         self.LEEMWindowLen = 4
 
+        self.LEEDAverageIV = []
+        self.outputLEEDAverage = False
+
         self.exp = None  # overwritten on load with Experiment object
         self.hasdisplayedLEEMdata = False
         self.hasdisplayedLEEDdata = False
@@ -321,9 +328,6 @@ class Viewer(QtWidgets.QWidget):
 
     def initConfigTab(self):
         """Setup Layout of Config Tab."""
-        # configTabGroupbox = QtWidgets.QGroupBox()
-        configtabBottomButtonHBox = QtWidgets.QHBoxLayout()
-        # configTabGroupButtonBox = QtWidgets.QHBoxLayout()
         configTabVBox = QtWidgets.QVBoxLayout()
 
         # smooth settings
@@ -436,11 +440,24 @@ class Viewer(QtWidgets.QWidget):
         RectSettingGroupBox.setLayout(LEEDRectSettingHBox)
         configTabVBox.addWidget(RectSettingGroupBox)
 
+        # LEED Average Settings
+        AverageSettingGroupBox = QtWidgets.QGroupBox()
+        LEEDAverageSettingHBox = QtWidgets.QHBoxLayout()
+        LEEDAverageSettingVBox = QtWidgets.QVBoxLayout()
+        AverageSettingLabel = QtWidgets.QLabel("Enable LEED Average for File Output")
+        LEEDAverageSettingVBox.addWidget(AverageSettingLabel)
+        self.LEEDAverageToggleBox = QtWidgets.QCheckBox()
+        self.LEEDAverageToggleBox.stateChanged.connect(self.averageStateChanged)
+        LEEDAverageSettingVBox.addWidget(self.LEEDAverageToggleBox)
+        LEEDAverageSettingHBox.addLayout(LEEDAverageSettingVBox)
+        LEEDAverageSettingHBox.addStretch()
+        AverageSettingGroupBox.setLayout(LEEDAverageSettingHBox)
+
+        configTabVBox.addWidget(self.h_line())
+        configTabVBox.addWidget(AverageSettingGroupBox)
+
         configTabVBox.addStretch()
 
-        configtabBottomButtonHBox.addStretch(1)
-        # configtabBottomButtonHBox.addWidget(self.quitbut)
-        configTabVBox.addLayout(configtabBottomButtonHBox)
         self.ConfigTab.setLayout(configTabVBox)
 
     def initLEEDTab(self):
@@ -726,6 +743,12 @@ class Viewer(QtWidgets.QWidget):
                 thread.start()
 
         elif datatype == 'LEED' and self.hasdisplayedLEEDdata and self.LEEDclickpos:
+            if self.outputLEEDAverage and not self.LEEDAverageIV:
+                # no average I(V) to output
+                print("Warning: Configuration Setting to Output Average I(V) is enabled.")
+                print("However, no average has been calculated.")
+                print("Please disbale averaging or average current I(V) curves.")
+                return
             # Query User for output directory
             # PyQt5 - This method now returns a tuple - we want only the first element
             outdir = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory",
@@ -756,22 +779,15 @@ class Viewer(QtWidgets.QWidget):
                         print("Error: One or more threads has not finished file I/O ...")
                         return
             self.threads = []
-            if len(self.LEEDrects) != len(self.LEEDclickpos):
-                print("Error: number of LEED widnows does not match number of Click coordinates.")
-                return
-            for idx, tup in enumerate(self.LEEDclickpos):
-                outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                rad = self.LEEDrects[idx][3]
-                x = int(tup[0])
-                y = int(tup[1])
-                int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
-                                                x - rad:x + rad + 1, :]
-                # get average intensity per window
-                ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+            if self.outputLEEDAverage and self.LEEDAverageIV:
+                # output single curve
+                outfile = os.path.join(outdir, outname+'.txt')
                 if self.smoothLEEDoutput:
-                    ilist = LF.smooth(ilist,
+                    ilist = LF.smooth(self.LEEDAverageIV,
                                       window_len=self.LEEDWindowLen,
                                       window_type=self.LEEDWindowType)
+                else:
+                    ilist = self.LEEDAverageIV
                 thread = WorkerThread(task='OUTPUT_TO_TEXT',
                                            elist=self.leeddat.elist,
                                            ilist=ilist,
@@ -779,6 +795,31 @@ class Viewer(QtWidgets.QWidget):
                 thread.finished.connect(self.output_complete)
                 self.threads.append(thread)
                 thread.start()
+            else:
+                # output multiple curves
+                if len(self.LEEDrects) != len(self.LEEDclickpos):
+                    print("Error: number of LEED widnows does not match number of Click coordinates.")
+                    return
+                for idx, tup in enumerate(self.LEEDclickpos):
+                    outfile = os.path.join(outdir, outname+str(idx)+'.txt')
+                    rad = self.LEEDrects[idx][3]
+                    x = int(tup[0])
+                    y = int(tup[1])
+                    int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
+                                                    x - rad:x + rad + 1, :]
+                    # get average intensity per window
+                    ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                    if self.smoothLEEDoutput:
+                        ilist = LF.smooth(ilist,
+                                          window_len=self.LEEDWindowLen,
+                                          window_type=self.LEEDWindowType)
+                    thread = WorkerThread(task='OUTPUT_TO_TEXT',
+                                               elist=self.leeddat.elist,
+                                               ilist=ilist,
+                                               name=outfile)
+                    thread.finished.connect(self.output_complete)
+                    self.threads.append(thread)
+                    thread.start()
 
     def validate_smoothing_settings(self, but=None):
         """Validate User input from Config Tab smoothing settings."""
@@ -870,6 +911,14 @@ class Viewer(QtWidgets.QWidget):
                 self.smoothLEEMplot = False
                 self.smoothLEEMoutput = False
             return
+
+    @QtCore.pyqtSlot()
+    def averageStateChanged(self):
+        """Toggle boolean flag for outputting average LEED IV."""
+        if self.LEEDAverageToggleBox.isChecked():
+            self.outputLEEDAverage = True
+        else:
+            self.outputLEEDAverage = False
 
     @staticmethod
     @QtCore.pyqtSlot()
@@ -1491,6 +1540,46 @@ class Viewer(QtWidgets.QWidget):
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
             self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=3))
 
+    def averageLEEDIV(self):
+        """Extract IV from current user selections and average the curves."""
+        if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
+            return
+        if len(self.LEEDrects) != len(self.LEEDclickpos):
+            print("Error: Number of LEED widnows does not match number of stored click positions")
+            return
+        if len(self.LEEDrects) == 1:
+            print("Averaging LEED I(V) curves requires more than one selection.")
+            return
+        curves = []
+        for idx, tup in enumerate(self.LEEDclickpos):
+            # center coordinates
+            xc = tup[0]
+            yc = tup[1]
+
+            # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
+            rad = int(self.LEEDrects[idx][3])  # cast to int to ensure array indexing uses ints
+
+            # top left corner in array coordinates
+            xtl = int(xc - rad)
+            ytl = int(yc - rad)
+            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
+                                            xtl:xtl + 2*rad + 1, :]
+            # store average intensity per window
+            ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+            # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            curves.append(ilist)
+        self.LEEDAverageIV = list(map(lambda l: sum(l)/float(len(l)), zip(*curves)))
+        if self.smoothLEEDplot:
+            self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                       LF.smooth(self.LEEDAverageIV,
+                                                 window_len=self.LEEDWindowLen,
+                                                 window_type=self.LEEDWindowType),
+                                       pen=pg.mkPen(self.qcolors[0], width=3))
+        else:
+            self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                       self.LEEDAverageIV,
+                                       pen=pg.mkPen(self.qcolors[0], width=3))
+
     def clearLEEDIV(self):
         """Triggered by menu action to clear all LEED selections."""
         self.LEEDivplotwidget.clear()
@@ -1502,6 +1591,7 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDclickpos = []
             self.LEEDclicks = 0
             self.LEEDclickpos = []
+            self.LEEDAverageIV = []
 
     def clearLEEMIV(self):
         """Clear User selections from LEEM image and clear IV plot."""
