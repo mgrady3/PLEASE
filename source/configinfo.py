@@ -49,6 +49,7 @@ def output_environment_config():
     if conda:
         cmd = "conda env export > {}".format(os.path.join(outdir, "Environment.yaml"))
         os.system(cmd)
+        print("Successfully output conda environment info to {}".format(outdir))
 
     with open(os.path.join(outdir, "configinfo" + get_date_string() + '.txt'), 'w') as f:
         f.write("# User Runtime Configuration Settings # \n")
@@ -71,6 +72,7 @@ def output_environment_config():
         f.write("Pip Installed Modules: \n")
         for module in piptext.split("\n"):
             f.write("\t" + module + "\n")
+    print("Successfully output config info text file to {}".format(outdir))
     return
 
 
