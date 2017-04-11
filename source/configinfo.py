@@ -36,19 +36,21 @@ def output_environment_config():
     This can be used to help address issues that a User may face
     concerning problems with their installed libraries.
     """
-    if not os.path.exists("config-info-output"):
-        os.mkdir("config-info-output")
-    outputpath = os.path.join(os.getcwd(), "config-info-output")
+    packagepath = os.path.join(os.getcwd(), os.pardir)
+    outdir = os.path.join(packagepath, "config-info-output")
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+    # outputpath = os.path.join(os.getcwd(), "config-info-output")
 
     conda = using_conda()
     pypath = check_python_path_set()
     platforminfo = get_platform_info()
 
     if conda:
-        cmd = "conda env export > {}".format(os.path.join(outputpath, "Environment.yaml"))
+        cmd = "conda env export > {}".format(os.path.join(outdir, "Environment.yaml"))
         os.system(cmd)
 
-    with open(os.path.join(outputpath, "configinfo" + get_date_string() + '.txt'), 'w') as f:
+    with open(os.path.join(outdir, "configinfo" + get_date_string() + '.txt'), 'w') as f:
         f.write("# User Runtime Configuration Settings # \n")
         f.write("User Platform Info: \n\n")
         pp = pprint.PrettyPrinter(indent=4, stream=f)
@@ -69,7 +71,6 @@ def output_environment_config():
         f.write("Pip Installed Modules: \n")
         for module in piptext.split("\n"):
             f.write("\t" + module + "\n")
-
     return
 
 
