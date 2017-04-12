@@ -17,7 +17,6 @@ Usage:
 import os
 import sys
 import traceback
-import pyqtgraph as pg
 from PyQt5 import QtWidgets
 
 # Local Project imports
@@ -25,7 +24,6 @@ from please import MainWindow
 
 
 __Version = '1.0.0'
-# __imgorder = 'row-major'  # pyqtgraph global setting
 
 
 def custom_exception_handler(exc_type, exc_value, exc_traceback):
@@ -44,9 +42,6 @@ def main():
     sys.excepthook = custom_exception_handler
     # print("Initializing Qt Event Loop ...")
     app = QtWidgets.QApplication(sys.argv)
-
-    # pyqtgraph settings
-    # pg.setConfigOption('imageAxisOrder', __imgorder)
 
     # print("Creating Please App ...")
     mw = MainWindow(v=__Version)
