@@ -97,7 +97,7 @@ def getRectCorners(pt1, pt2):
         return None
 
 
-def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte='L'):
+def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte=None):
     """Read in .dat files, convert to numpy arrays, then stack into 3D numpy array and return.
 
     :argument dirname: string path to current data directory
@@ -116,7 +116,10 @@ def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte='L'):
     files = [name for name in os.listdir(dirname) if name.endswith('.dat') and not name.startswith(".")]
     files.sort()
     print('First file is {}.'.format(files[0]))
-
+    bitsize = bits
+    byteorder = byte
+    if byte is None:
+        byteorder = 'L'
     for fl in files:
         with open(os.path.join(dirname, fl), 'rb') as f:
             # dynamically calculate file header length
@@ -134,22 +137,24 @@ def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte='L'):
             f.seek(0)
 
             # Generate format string given a bit size read from YAML config file
-            if bits == 8 and byte == 'L':
+            if bitsize == 8 and byteorder == 'L':
                 formatstring = '<u1'  # 1 byte (8 bits) per pixel
-            elif bits == 8 and byte == 'B':
+            elif bitsize == 8 and byteorder == 'B':
                 formatstring = '>u1'
 
-            elif bits == 16 and byte == 'L':
+            elif bitsize == 16 and byteorder == 'L':
                 formatstring = '<u2'  # 2 bytes (16 bits) per pixel
-            elif bits == 16 and byte == 'B':
+            elif bitsize == 16 and byteorder == 'B':
                 formatstring = '>u2'
 
-            elif bits is None:
+            elif bitsize is None:
                 formatstring = '<u2'  # default to 16 bit images
 
             else:
                 print("Error in process_LEEM_Data() - unknown bit size when loading raw data")
                 print("Check for incorrect bitsize in YAML experiment file")
+                print("The paramters loaded from file were: bit size = {0}, byte order = {1}".format(bits, byte))
+                return None
 
             arr_list.append(np.fromstring(f.read()[hdln:],
                                           formatstring).reshape((ht, wd)))

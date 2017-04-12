@@ -65,7 +65,7 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         dataTypeHBox = QtWidgets.QHBoxLayout()
         dataTypeLabel = QtWidgets.QLabel("Choose Data Type:")
         self.dataTypeMenu = QtWidgets.QComboBox()
-        self.dataTypeMenu.addItem("RAW")
+        self.dataTypeMenu.addItem("Raw")
         self.dataTypeMenu.addItem("Image")
         dataTypeHBox.addWidget(dataTypeLabel)
         dataTypeHBox.addStretch()
@@ -180,7 +180,7 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
 
         exptype = str(self.expTypeMenu.currentText()).upper()
 
-        datatype = str(self.dataTypeMenu.currentText()).upper()
+        datatype = str(self.dataTypeMenu.currentText())
 
         fileext = str(self.fileTypeMenu.currentText()).lower()
 

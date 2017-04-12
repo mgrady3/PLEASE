@@ -32,6 +32,7 @@ from data import LeedData, LeemData
 from experiment import Experiment
 from qthreads import WorkerThread
 from terminal import MessageConsole
+from yamloutput import ExperimentYAMLOutput
 
 __Version = '1.0.0'
 
@@ -109,6 +110,10 @@ class MainWindow(QtWidgets.QMainWindow):
         helpMenu = self.menubar.addMenu("Help")
 
         # File menu
+        self.createYAMLAction = QtWidgets.QAction("Generate Experiment Config File", self)
+        self.createYAMLAction.triggered.connect(self.viewer.createExperimentConfigFile)
+        fileMenu.addAction(self.createYAMLAction)
+
         self.exitAction = QtWidgets.QAction("Exit", self)
         self.exitAction.setShortcut('Ctrl+Q')
         self.exitAction.triggered.connect(self.quit)
@@ -538,6 +543,34 @@ class Viewer(QtWidgets.QWidget):
         f.setFrameShape(QtWidgets.QFrame.VLine)
         f.setFrameShadow(QtWidgets.QFrame.Sunken)
         return f
+
+    def createExperimentConfigFile(self):
+        """Get User settings and generate a .yaml file."""
+        self.yamlwidget = ExperimentYAMLOutput()
+        self.yamlwidget.userData.connect(self.recieveYAMLSettings)
+
+    @QtCore.pyqtSlot(object)
+    def recieveYAMLSettings(self, settings):
+        """Recieve user settings from YAML widget."""
+        # self.userYAMLSettings = settings
+        # print(settings)
+        print("Recieved user Experiment settings.")
+        self.thread = WorkerThread(task="CREATE_YAML", settings=settings)
+        try:
+            self.thread.disconnect()
+        except TypeError:
+            pass
+        self.thread.yamlFileOutput.connect(self.experimentConfigWritten)
+        self.thread.start()
+
+    @staticmethod
+    @QtCore.pyqtSlot(bool)
+    def experimentConfigWritten(output):
+        """Signal successful file write."""
+        if output:
+            print("Experiment configuration file successfully output.")
+        else:
+            print("Failed to write YAML file.")
 
     def load_experiment(self):
         """Query User for YAML config file to load experiment settings.

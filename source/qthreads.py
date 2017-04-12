@@ -19,7 +19,7 @@ Common tasks for the worker thread will be:
 import os
 import LEEMFUNCTIONS as LF
 import numpy as np
-# from detect_peaks import detect_peaks as dp
+from experiment import Experiment
 from PyQt5 import QtCore
 
 # TODO: Consider splitting to multiple classes for separate tasks
@@ -31,6 +31,7 @@ class WorkerThread(QtCore.QThread):
     # Pyqt5 Signals must be declared at class level
     done = QtCore.pyqtSignal()
     outputSIGNAL = QtCore.pyqtSignal(np.ndarray)
+    yamlFileOutput = QtCore.pyqtSignal(bool)
 
     def __init__(self, task=None, **kwargs):
         """Initialize QThread with required parameters.
@@ -57,7 +58,7 @@ class WorkerThread(QtCore.QThread):
         # path refers to input data path
         # output data path is labeled as outpath
         self.valid_keys = ['path', 'data', 'ilist', 'elist',
-                           'imht', 'imwd', 'name', 'bits', 'ext', 'byte', 'outpath', 'files']
+                           'imht', 'imwd', 'name', 'bits', 'ext', 'byte', 'outpath', 'files', 'settings']
         for key in self.params.keys():
             if key not in self.valid_keys:
                 print('Terminating - ERROR Invalid Task Parameter: {}'.format(key))
@@ -122,6 +123,11 @@ class WorkerThread(QtCore.QThread):
             self.gen_Dat_Files()
             self.quit()
             self.exit()  # restrict action to one task
+
+        elif self.task == 'CREATE_YAML':
+            self.createYAML()
+            self.quit()
+            self.exit()
 
         else:
             print('Terminating: Unknown task ...')
@@ -358,3 +364,15 @@ class WorkerThread(QtCore.QThread):
                 with open(os.path.join(outdir, file.split('.')[0]+'.dat'), 'wb') as outfile:
                     data.tofile(outfile)
         self.done.emit()
+
+    def createYAML(self):
+        """Write User settings to .yaml file with appropriate format."""
+        try:
+            settings = self.params['settings']
+        except KeyError:
+            print("Error: Required Parameter 'settings' is missing from call to createYAML() ... ")
+            self.yamlFileOutput.emit(False)
+            return
+        Experiment.toFile(settings)
+        self.yamlFileOutput.emit(True)
+        return

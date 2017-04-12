@@ -10,6 +10,7 @@ Generic LEEM / LEED experiment object
 Used for serializing experiment data
 This makes it easier to load data from a previously analyzed experiment
 """
+import os
 import yaml
 import pprint
 
@@ -42,13 +43,45 @@ class Experiment(object):
 
         self.loaded_settings = None
 
-    def toFile(self):
+    @staticmethod
+    def toFile(settings):
         """Write experiment settings to a YAML config file.
 
         To Be Implemented later.
         :return: None
         """
-        pass
+        name = settings['File Name']
+        path = settings['Data Path']
+        exptype = settings['Experiment Type']
+        datatype = settings['Data Type']
+        fileext = settings['File Format']
+        imht = settings['Image Height']
+        imwd = settings['Image Width']
+        minE = settings["Minimum Energy"]
+        maxE = settings["Maximum Energy"]
+        stepE = settings["Energy Step Size"]
+        bitsize = settings["Bit Depth"]
+        byteorder = settings["Byte Order"]
+
+        tab = '    '
+        qt = "\""
+
+        with open(os.path.join(path, name), 'w') as f:
+            f.write("Experiment:\n")
+            f.write(tab + "Type:  " + qt + exptype + qt + '\n')
+            f.write(tab + "Name:  " + qt + name + qt + '\n')
+            f.write(tab + "Data Type:  " + qt + datatype + qt + '\n')
+            f.write(tab + "File Format:  " + qt + fileext + qt + '\n')
+            f.write(tab + "Image Parameters:" + '\n')
+            f.write(tab + tab + "Height:  " + str(imht) + '\n')
+            f.write(tab + tab + "Width:  " + str(imwd) + '\n')
+            f.write(tab + "Energy Parameters:" + '\n')
+            f.write(tab + tab + "Min:  " + str(minE) + '\n')
+            f.write(tab + tab + "Max:  " + str(maxE) + '\n')
+            f.write(tab + tab + "Step:  " + str(stepE) + '\n')
+            f.write(tab + "Data Path:  " + qt + path + qt + '\n')
+            f.write(tab + "Bit Size:  " + str(bitsize) + '\n')
+            f.write(tab + "Byte Order:  " + qt + byteorder + qt + '\n')
 
     def fromFile(self, fl):
         """
