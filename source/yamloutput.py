@@ -9,17 +9,33 @@ This file contains a widget which provides a user interface to create an Experim
 which will be saved and output as a .yaml file. This file can then be loaded by PLEASE to facilitate the
 loading of LEEM or LEED data sets.
 """
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 
 class ExperimentYAMLOutput(QtWidgets.QWidget):
     """UI Widget to generate Experiment Configuration Files in YAML format."""
 
+    userData = QtCore.pyqtSignal(object)
+
     def __init__(self):
         """."""
         super(ExperimentYAMLOutput, self).__init__()
         self.setupLayout()
+        self.dataPath = None
+        self.pathButton.clicked.connect(self.getPath)
+        self.doneButton.clicked.connect(self.parseInput)
         self.show()
+
+    def getPath(self):
+        """Get Path to Data files from User."""
+        path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Data Directory")
+        if isinstance(path, tuple) and len(path) != 0:
+            path = str(path[0])
+        if path != "":
+            self.dataPath = path
+            self.pathText.setReadOnly(False)
+            self.pathText.setText(path)
+            self.pathText.setReadOnly(True)
 
     def setupLayout(self):
         """Setup Widget UI Layout."""
@@ -149,3 +165,90 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         doneButtonHBox.addWidget(self.doneButton)
         mainVBox.addLayout(doneButtonHBox)
         self.setLayout(mainVBox)
+
+    def parseInput(self):
+        """Triggered when User clicks Done button.
+
+        Ensure proper values are entered and that all fields are covered.
+        """
+        name = str(self.nameText.text())
+        if name == '':
+            print("Warning: No file name entered; defaulting to Experiment.yaml")
+            name = 'Experiment.yaml'
+        else:
+            name += ".yaml"
+
+        exptype = str(self.expTypeMenu.currentText()).upper()
+
+        datatype = str(self.dataTypeMenu.currentText()).upper()
+
+        fileext = str(self.fileTypeMenu.currentText()).lower()
+
+        try:
+            imht = int(self.htText.text())
+        except ValueError:
+            print("Error: Image Height must be an integer > 0.")
+            return
+        if imht <= 0:
+            print("Error: Image Height must be an integer > 0.")
+            return
+        try:
+            imwd = int(self.wdText.text())
+        except ValueError:
+            print("Error: Image Width must be an integer > 0.")
+            return
+        if imwd <= 0:
+            print("Error: Image Height must be an integer > 0.")
+            return
+
+        try:
+            minE = float(self.minEText.text())
+        except ValueError:
+            print("Error: Minimum energy must be a floating point number.")
+            return
+        try:
+            maxE = float(self.maxEText.text())
+        except ValueError:
+            print("Error: Maximum energy must be a floating point number.")
+            return
+        if maxE <= minE:
+            print("Error: Maximum Energy must be > Minimum Energy.")
+            return
+        try:
+            stepE = float(self.stepEText.text())
+        except ValueError:
+            print("Error: Energy Step Size must be a floating point number.")
+            return
+
+        bitsize = str(self.bitSizeMenu.currentText())
+        if bitsize == "16-bit":
+            bitsize = 16
+        else:
+            bitsize = 8
+
+        byteorder = str(self.byteOrderMenu.currentText())
+        if byteorder == "LittleEndian":
+            byteorder = "L"
+        else:
+            byteorder = "B"
+
+        if self.dataPath is None:
+            print("Error: You must select valid data path.")
+            return
+
+        settings = {
+            'File Name': name,
+            "Experiment Type": exptype,
+            "Data Type": datatype,
+            "File Format": fileext,
+            "Image Height": imht,
+            "Image Width": imwd,
+            "Minimum Energy": minE,
+            "Maximum Energy": maxE,
+            "Energy Step Size": stepE,
+            "Data Path": self.dataPath,
+            "Bit Depth": bitsize,
+            "Byte Order": byteorder
+        }
+        self.userData.emit(settings)
+        self.close()
