@@ -44,9 +44,11 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 4. Now any packages installed will be isolated to this python environment
 5. At any time the environment can be deactivated/reactivated by:
     OS X + Linux: source deactivate
+
     Windows: deactivate
 
     OS X + Linux: source activate PLEASE
+
     Windows: activate PLEASE
 
 ### Installing dependencies
@@ -61,7 +63,7 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 5. Type Y and press enter when prompted to install the packages
 6. The rest of the dependencies will be installed with pip
 7. Execute the following:
-    pip install pyqt5, pendulum, pyqtgraph
+    pip install pyqt5 pendulum pyqtgraph
 8. Type Y and press enter if prompted to continue the installation
 9. All required packages should now be installed
 
@@ -82,7 +84,7 @@ All python and other language source files are located in the /source/ directory
     OS X + Linux: source activate PLEASE
     Windows: activate PLEASE
 
-2. The file with needs to be executed to start the application is called main.py. This file resides in /PLEASE/source/.
+2. The file that needs to be executed to start the application is called main.py. This file resides in /PLEASE/source/.
 
 
 3. Execute the main python file to start the application:
