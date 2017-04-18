@@ -40,12 +40,24 @@ __Version = '1.0.0'
 class ExtendedCrossHair(QtCore.QObject):
     """Set of perpindicular InfiniteLines tracking mouse postion."""
 
-    def __init__(self):
+    def __init__(self, pen=None):
         """."""
         super(ExtendedCrossHair, self).__init__()
-        self.hline = pg.InfiniteLine(angle=0, movable=False)
-        self.vline = pg.InfiniteLine(angle=90, movable=False)
+
+        self.hline = pg.InfiniteLine(angle=0, movable=False, pen=pen)
+        self.vline = pg.InfiniteLine(angle=90, movable=False, pen=pen)
         self.curPos = (0, 0)  # store (x, y) mouse position
+
+    def setLineWidth(self, w):
+        """Set line width for self.hline and self.vline."""
+        color = pg.mkColor('y')
+        pen = pg.mkPen(color=color, width=w)
+        self.hline.pen = pen
+        self.vline.pen = pen
+        self.hline.currentPen = pen
+        self.vline.currentPen = pen
+        self.hline.update()
+        self.vline.update()
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -427,6 +439,8 @@ class Viewer(QtWidgets.QWidget):
         RectSettingLabel = QtWidgets.QLabel("Enter LEED Window Side Length [even integer]")
         LEEDRectSettingVBox.addWidget(RectSettingLabel)
         self.LEEDRectEntry = QtWidgets.QLineEdit()
+        self.LEEDRectEntry.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                         QtWidgets.QSizePolicy.Minimum)
         entryHBox = QtWidgets.QHBoxLayout()
         entryHBox.addWidget(self.LEEDRectEntry)
         entryHBox.addStretch()
@@ -460,7 +474,27 @@ class Viewer(QtWidgets.QWidget):
 
         configTabVBox.addWidget(self.h_line())
         configTabVBox.addWidget(AverageSettingGroupBox)
+        configTabVBox.addWidget(self.h_line())
 
+        # crosshair settings
+        crosshairSettingsGroupBox = QtWidgets.QGroupBox()
+        crosshairHBox = QtWidgets.QHBoxLayout()
+        crosshairVBox = QtWidgets.QVBoxLayout()
+        crosshairLabel = QtWidgets.QLabel("Enter LEEM crosshair line width [int]")
+        crosshairVBox.addWidget(crosshairLabel)
+        self.crosshairText = QtWidgets.QLineEdit()
+        self.crosshairText.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                         QtWidgets.QSizePolicy.Minimum)
+        crosshairVBox.addWidget(self.crosshairText)
+        buttonHbox = QtWidgets.QHBoxLayout()
+        self.apply_settings_crosshair_button = QtWidgets.QPushButton("Apply Settings", self)
+        self.apply_settings_crosshair_button.clicked.connect(self.validateWidth)
+        buttonHbox.addWidget(self.apply_settings_crosshair_button)
+        crosshairVBox.addLayout(buttonHbox)
+        crosshairHBox.addLayout(crosshairVBox)
+        crosshairHBox.addStretch()
+        crosshairSettingsGroupBox.setLayout(crosshairHBox)
+        configTabVBox.addWidget(crosshairSettingsGroupBox)
         configTabVBox.addStretch()
 
         self.ConfigTab.setLayout(configTabVBox)
@@ -543,6 +577,29 @@ class Viewer(QtWidgets.QWidget):
         f.setFrameShape(QtWidgets.QFrame.VLine)
         f.setFrameShadow(QtWidgets.QFrame.Sunken)
         return f
+
+    def validateWidth(self):
+        """Check user input and set crosshair line width."""
+        w = self.crosshairText.text()
+        try:
+            w = int(w)
+        except ValueError:
+            print("Error: line width must be entered as an integer > 0.")
+            return
+        if w <= 0:
+            print("Error: line width must be entered as an integer > 0.")
+            return
+        else:
+            try:
+                self.crosshair.setLineWidth(w)
+            except AttributeError:
+                # have not instantiated crosshair yet
+                self.crosshair = ExtendedCrossHair()
+                self.crosshair.setLineWidth(w)
+                self.LEEMimageplotwidget.addItem(self.crosshair.hline,
+                                                 ignoreBounds=True)
+                self.LEEMimageplotwidget.addItem(self.crosshair.vline,
+                                                 ignoreBounds=True)
 
     def createExperimentConfigFile(self):
         """Get User settings and generate a .yaml file."""
@@ -1005,10 +1062,15 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMimageplotwidget.hideAxis('bottom')
         self.LEEMimageplotwidget.hideAxis('left')
 
-        # reset new crosshair on load to force crosshair on top of image
-        self.crosshair = ExtendedCrossHair()
+        if not hasattr(self, 'crosshair'):
+            pen = pg.mkPen(color=pg.mkColor('y'), width=2)
+            self.crosshair = ExtendedCrossHair(pen)
+        # If self.crosshair already existed, we remove the lines and re-add them to the scene
+        # this forces them to be on top of the displayed image.
+        self.LEEMimageplotwidget.removeItem(self.crosshair.hline)
         self.LEEMimageplotwidget.addItem(self.crosshair.hline,
                                          ignoreBounds=True)
+        self.LEEMimageplotwidget.removeItem(self.crosshair.vline)
         self.LEEMimageplotwidget.addItem(self.crosshair.vline,
                                          ignoreBounds=True)
 
