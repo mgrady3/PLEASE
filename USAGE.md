@@ -37,9 +37,9 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 1. First we will create a python environment for PLEASE and its dependencies to isolate this from other python installations and environments.
 2. Execute the following line in the Terminal to create a conda environment called PLEASE:
 
-    ```
-    Code
-    More Code
+    ```shell
+   
+   conda create -n PLEASE
     ```
 
 3. Activate the PLEASE environment with the following line:
