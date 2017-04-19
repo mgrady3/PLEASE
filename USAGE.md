@@ -131,16 +131,23 @@ All python and other language source files are located in the /source/ directory
 ### Executing PLEASE
 1. To start PLEASE, first activate the PLEASE environment:
 
-    OS X + Linux: source activate PLEASE
+    - OS X + Linux:
+        ```shell
+        source activate PLEASE
+        ```
     
-    Windows: activate PLEASE
+    - Windows:
+        ```shell
+        activate PLEASE
+        ````
 
 2. The file that needs to be executed to start the application is called main.py. This file resides in /PLEASE/source/.
 
 
 3. Execute the main python file to start the application:
-
-    python /path/to/PLEASE/source/main.py
+```shell
+python /path/to/PLEASE/source/main.py
+```
 
 4. If all dependencies are installed, the application should launch and the main Graphical User Interface should be visible.
 
