@@ -36,9 +36,13 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 ### Setting up a Python Environment for PLEASE
 1. First we will create a python environment for PLEASE and its dependencies to isolate this from other python installations and environments.
 2. Execute the following line in the Terminal to create a conda environment called PLEASE:
+
     conda create -n PLEASE
+
 3. Activate the PLEASE environment with the following line:
+
     OS X + Linux: source activate PLEASE
+
     Windows: activate PLEASE
 
 4. Now any packages installed will be isolated to this python environment
@@ -62,11 +66,15 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 2. Make sure you have activated the PLEASE environment as shown above.
 3. Numpy, Scipy, Pillow, and Pyyaml will be installed with conda
 4. Execute the following:
+
     conda install numpy scipy pillow pyyaml
+
 5. Type Y and press enter when prompted to install the packages
 6. The rest of the dependencies will be installed with pip
 7. Execute the following:
+
     pip install pyqt5 pendulum pyqtgraph
+
 8. Type Y and press enter if prompted to continue the installation
 9. All required packages should now be installed
 
