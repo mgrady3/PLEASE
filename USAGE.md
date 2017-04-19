@@ -60,7 +60,7 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 4. Now any packages installed will be isolated to this python environment
 5. At any time the environment can be deactivated/reactivated by executing the following commands:
 
-    i. Environment Deactivation
+    a. Environment Deactivation
     
         - OS X and Linux: 
     
@@ -74,7 +74,7 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
         deactivate
         ```
 
-    ii. Environment Activation
+    b. Environment Activation
     
         - OS X and Linux:
         
@@ -99,13 +99,17 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 3. Numpy, Scipy, Pillow, and Pyyaml will be installed with conda
 4. Execute the following:
 
+    ```shell
     conda install numpy scipy pillow pyyaml
+    ```
 
 5. Type Y and press enter when prompted to install the packages
 6. The rest of the dependencies will be installed with pip
 7. Execute the following:
 
+    ```shell
     pip install pyqt5 pendulum pyqtgraph
+    ```
 
 8. Type Y and press enter if prompted to continue the installation
 9. All required packages should now be installed
@@ -120,7 +124,9 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
     
     b. using git: from the command line navigate to your Desktop directory and then execute:
     
+        ```shell
         git clone https://www.github.com/mgrady3/PLEASE
+        ```
 
 ### Source structure
 Within the main source tree for PLEASE, the outermost directory contains information files such as the README, the LICENSE, etc. Subdirectories for media files, test data, and source code are contained in the top level directory.
