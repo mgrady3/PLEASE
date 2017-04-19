@@ -145,9 +145,10 @@ All python and other language source files are located in the /source/ directory
 
 
 3. Execute the main python file to start the application:
-```shell
-python /path/to/PLEASE/source/main.py
-```
+    
+    ```shell
+    python /path/to/PLEASE/source/main.py
+    ```
 
 4. If all dependencies are installed, the application should launch and the main Graphical User Interface should be visible.
 
