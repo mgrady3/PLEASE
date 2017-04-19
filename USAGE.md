@@ -42,12 +42,13 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
     Windows: activate PLEASE
 
 4. Now any packages installed will be isolated to this python environment
-5. At any time the environment can be deactivated/reactivated by:
-    OS X + Linux: source deactivate
+5. At any time the environment can be deactivated/reactivated by executing the following commands:
+
+    OS X and Linux: source deactivate
 
     Windows: deactivate
 
-    OS X + Linux: source activate PLEASE
+    OS X and Linux: source activate PLEASE
 
     Windows: activate PLEASE
 
