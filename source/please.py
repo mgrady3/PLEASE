@@ -1545,7 +1545,7 @@ class Viewer(QtWidgets.QWidget):
             # We want to plot smoothed data and have already calculated it for this pixel position
             ydata = self.leemdat.dat3ds[ymp, xmp, :]
 
-        pen = pg.mkPen(self.qcolors[0], width=3)
+        pen = pg.mkPen(self.qcolors[0], width=4)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
         self.LEEMivplotwidget.getPlotItem().clear()
         self.LEEMivplotwidget.getPlotItem().addItem(pdi, clear=True)
@@ -1633,7 +1633,7 @@ class Viewer(QtWidgets.QWidget):
             # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=3))
+            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
 
     def averageLEEDIV(self):
         """Extract IV from current user selections and average the curves."""
