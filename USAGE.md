@@ -54,7 +54,9 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 
 ### Installing dependencies
 1. We will use two tools to install the required packages for PLEASE.
+
     a. conda - the Anaconda package and environment manager
+
     b. pip - the standard python package manager
 
 2. Make sure you have activated the PLEASE environment as shown above.
