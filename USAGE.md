@@ -119,7 +119,7 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
     a. download from the web by clicking the green "Clone or download". Select Download zip. Extract the Zip to your Desktop.
     
     b. using git: from the command line navigate to your Desktop directory and then execute:
-    
+        
         ```shell
         git clone https://www.github.com/mgrady3/PLEASE
         ```
