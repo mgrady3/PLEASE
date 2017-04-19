@@ -140,38 +140,41 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearLEEMAction.triggered.connect(self.viewer.clearLEEMIV)
         LEEMMenu.addAction(self.clearLEEMAction)
 
+        rectMenu = LEEMMenu.addMenu("Window Extraction")
         self.enableLEEMRectAction = QtWidgets.QAction("Enable LEEM Window Extraction", self)
         self.enableLEEMRectAction.triggered.connect(self.viewer.enableLEEMWindow)
-        LEEMMenu.addAction(self.enableLEEMRectAction)
+        rectMenu.addAction(self.enableLEEMRectAction)
 
         self.disableLEEMRectAction = QtWidgets.QAction("Disable LEEM Window Extraction", self)
         self.disableLEEMRectAction.triggered.connect(self.viewer.disableLEEMWindow)
-        LEEMMenu.addAction(self.disableLEEMRectAction)
+        rectMenu.addAction(self.disableLEEMRectAction)
 
         self.clearWindowsAction = QtWidgets.QAction("Clear Windows", self)
         self.clearWindowsAction.triggered.connect(self.viewer.clearLEEMWindows)
-        LEEMMenu.addAction(self.clearWindowsAction)
+        rectMenu.addAction(self.clearWindowsAction)
 
         self.extractLEEMWindowAction = QtWidgets.QAction("Extract I(V) from Windows", self)
         self.extractLEEMWindowAction.triggered.connect(self.viewer.extractLEEMWindows)
         self.extractLEEMWindowAction.setEnabled(self.viewer.LEEMRectWindowEnabled)
-        LEEMMenu.addAction(self.extractLEEMWindowAction)
+        rectMenu.addAction(self.extractLEEMWindowAction)
 
+        lineprofileMenu = LEEMMenu.addMenu("Line Profile Analysis")
         self.enableLEEMLinesAction = QtWidgets.QAction("Enable LEEM Line Profile", self)
         self.enableLEEMLinesAction.triggered.connect(self.viewer.enableLEEMLineProfile)
-        LEEMMenu.addAction(self.enableLEEMLinesAction)
+        lineprofileMenu.addAction(self.enableLEEMLinesAction)
 
         self.disableLEEMLinesAction = QtWidgets.QAction("Disable LEEM Line Profile", self)
         self.disableLEEMLinesAction.triggered.connect(self.viewer.disableLEEMLineProfile)
-        LEEMMenu.addAction(self.disableLEEMLinesAction)
+        lineprofileMenu.addAction(self.disableLEEMLinesAction)
 
         self.clearLEEMLineProfileAction = QtWidgets.QAction("Clear Line Profiles", self)
         self.clearLEEMLineProfileAction.triggered.connect(self.viewer.clearLEEMLines)
-        LEEMMenu.addAction(self.clearLEEMLineProfileAction)
+        lineprofileMenu.addAction(self.clearLEEMLineProfileAction)
 
         self.extractLEEMLineProfileAction = QtWidgets.QAction("Extract Line Profile", self)
         self.extractLEEMLineProfileAction.triggered.connect(self.viewer.extractLEEMLineProfiles)
-        LEEMMenu.addAction(self.extractLEEMLineProfileAction)
+        self.extractLEEMLineProfileAction.setEnabled(self.viewer.LEEMLineProfileEnabled)
+        lineprofileMenu.addAction(self.extractLEEMLineProfileAction)
 
         self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
@@ -924,7 +927,7 @@ class Viewer(QtWidgets.QWidget):
         else:
             print("Error: Invalid button label passed to validate_smoothing_settings().")
             return
-        print("Currently selected smoothing settings: {0} {1}".format(window_type, window_len))
+        print("Currently selected smoothing settings: {0} {1} {2}".format(but + ":", window_type, window_len))
         try:
             window_len = int(window_len)
         except TypeError:
@@ -1281,9 +1284,9 @@ class Viewer(QtWidgets.QWidget):
             ytl = int(topleft[1])
             width = int(bottomright[0] - xtl)
             height = int(bottomright[1] - ytl)
-            print("Topleft: {}".format(topleft))
-            print("Bottomright: {}".format(bottomright))
-            print("Window Selected: x={0}, y={1}, width={2}, height={3}".format(xtl, ytl, width, height))
+            # print("Topleft: {}".format(topleft))
+            # print("Bottomright: {}".format(bottomright))
+            print("Window Selected: X={0}, Y={1}, Width={2}, Height={3}".format(xtl, ytl, width, height))
             window = self.leemdat.dat3d[ytl:ytl + height + 1,
                                         xtl:xtl + width + 1, :]
             ilist = [img.sum()/(width*height) for img in np.rollaxis(window, 2)]
@@ -1328,6 +1331,7 @@ class Viewer(QtWidgets.QWidget):
                 self.LEEMimageplotwidget.scene().removeItem(item[0])
         self.LEEMRects = []
         self.LEEMLineProfileEnabled = True
+        self.parentWidget().extractLEEMLineProfileAction.setEnabled(self.LEEMLineProfileEnabled)
 
     def disableLEEMLineProfile(self):
         """Disable fixed energy contrast analysis.
@@ -1356,6 +1360,8 @@ class Viewer(QtWidgets.QWidget):
         # Reset Mouse event signals to default behaviour
         self.sigmcLEEM.connect(self.handleLEEMClick)
         self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+        self.LEEMLineProfileEnabled = False
+        self.parentWidget().extractLEEMLineProfileAction.setEnabled(self.LEEMLineProfileEnabled)
 
     def handleLEEMLineProfile(self, event):
         """Create QGraphicsLineItem objects from user click positions."""
@@ -1724,6 +1730,7 @@ class Viewer(QtWidgets.QWidget):
         if self.LEEMcircs:
             for circ in self.LEEMcircs:
                 self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMivplotwidget.clear()
         self.LEEMLines = []
         self.LEEMclicks = 0
         self.LEEMcircs = []
