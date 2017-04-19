@@ -120,9 +120,9 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
     
     b. using git: from the command line navigate to your Desktop directory and then execute:
         
-        ```shell
+        
         git clone https://www.github.com/mgrady3/PLEASE
-        ```
+       
 
 ### Source structure
 Within the main source tree for PLEASE, the outermost directory contains information files such as the README, the LICENSE, etc. Subdirectories for media files, test data, and source code are contained in the top level directory.
