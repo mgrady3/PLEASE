@@ -16,8 +16,9 @@ Usage:
 # Stdlib and Scientific Stack imports
 import os
 import sys
+import time
 import traceback
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 # Local Project imports
 from please import MainWindow
@@ -38,14 +39,38 @@ def custom_exception_handler(exc_type, exc_value, exc_traceback):
 
 def main():
     """Start Qt Event Loop and display main window."""
-    # print("Welcome to PLEASE. Installing Custom Exception Handler ...")
     sys.excepthook = custom_exception_handler
-    # print("Initializing Qt Event Loop ...")
+
     app = QtWidgets.QApplication(sys.argv)
 
-    # print("Creating Please App ...")
+    # Setup QSplashScreen
+    thispath = __file__
+    rootpath = os.path.join(os.path.dirname(thispath), os.pardir)
+    imagedir = os.path.join(rootpath, "Images")
+    splashimagepath = os.path.join(imagedir, "Splash.png")
+    splashimage = QtGui.QPixmap(splashimagepath)
+    splashscreen = QtWidgets.QSplashScreen(splashimage, QtCore.Qt.WindowStaysOnTopHint)
+    splashscreen.setMask(splashimage.mask())
+
+    progressbar = QtWidgets.QProgressBar(splashscreen)
+    progressbar.setGeometry(splashscreen.width()/10, 9*splashscreen.height()/10,
+                            8*splashscreen.width()/10, splashscreen.height()/10)
+
+    splashscreen.show()
+    app.processEvents()
+
+    p = 0
+    while p <= 100:
+        app.processEvents()
+        progressbar.setValue(p)
+        app.processEvents()
+        time.sleep(1)
+        app.processEvents()
+        p += 20
+
     mw = MainWindow(v=__Version)
     mw.showMaximized()
+    splashscreen.finish(mw)
 
     # This is a big fix for PyQt5 on macOS
     # When running a PyQt5 application that is not bundled into a
