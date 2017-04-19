@@ -59,7 +59,8 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 
 4. Now any packages installed will be isolated to this python environment
 5. At any time the environment can be deactivated/reactivated by executing the following commands:
-    -Environment Deactivation
+
+    i. Environment Deactivation
     
         - OS X and Linux: 
     
@@ -73,7 +74,7 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
         deactivate
         ```
 
-    - Environment Activation
+    ii. Environment Activation
     
         - OS X and Linux:
         
