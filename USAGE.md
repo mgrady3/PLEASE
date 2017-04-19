@@ -81,9 +81,13 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 ### Downloading PLEASE source
 0. Note: The PLEASE source code is rather small, however, included with PLEASE are two test data sets along with the corresponding Config files to facilitate loading the data. The inclusion of this data makes the total download ~600Mb. Keep this in mind when downloading the source.
 1. The PLEASE source code is hosted at https://www.github.com/mgrady3/PLEASE
+
 2. The source can be downloaded from the website or via the commandline if you have git installed
+
     a. download from the web by clicking the green "Clone or download". Select Download zip. Extract the Zip to your Desktop.
+    
     b. using git: from the command line navigate to your Desktop directory and then execute:
+    
         git clone https://www.github.com/mgrady3/PLEASE
 
 ### Source structure
@@ -92,13 +96,16 @@ All python and other language source files are located in the /source/ directory
 
 ### Executing PLEASE
 1. To start PLEASE, first activate the PLEASE environment:
+
     OS X + Linux: source activate PLEASE
+    
     Windows: activate PLEASE
 
 2. The file that needs to be executed to start the application is called main.py. This file resides in /PLEASE/source/.
 
 
 3. Execute the main python file to start the application:
+
     python /path/to/PLEASE/source/main.py
 
 4. If all dependencies are installed, the application should launch and the main Graphical User Interface should be visible.
