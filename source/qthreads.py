@@ -19,6 +19,7 @@ Common tasks for the worker thread will be:
 import os
 import LEEMFUNCTIONS as LF
 import numpy as np
+from configinfo import output_environment_config
 from experiment import Experiment
 from PyQt5 import QtCore
 
@@ -126,6 +127,11 @@ class WorkerThread(QtCore.QThread):
 
         elif self.task == 'CREATE_YAML':
             self.createYAML()
+            self.quit()
+            self.exit()
+
+        elif self.task == 'GEN_CONFIG_INFO':
+            self.outputConfigInfo()
             self.quit()
             self.exit()
 
@@ -364,6 +370,11 @@ class WorkerThread(QtCore.QThread):
                 with open(os.path.join(outdir, file.split('.')[0]+'.dat'), 'wb') as outfile:
                     data.tofile(outfile)
         self.done.emit()
+
+    def outputConfigInfo(self):
+        """Write settings for USER runtime environment to file."""
+        # no parameter requirements
+        output_environment_config()
 
     def createYAML(self):
         """Write User settings to .yaml file with appropriate format."""

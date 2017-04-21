@@ -85,7 +85,7 @@ def main():
         cmdpath = os.path.join(sourcepath, 'cmd.scpt')
         cmd = """osascript {0}""".format(cmdpath)
         os.system(cmd)
-        os.system(cmd)
+        # os.system(cmd)
         mw.viewer.setFocus()
 
     sys.exit(app.exec_())

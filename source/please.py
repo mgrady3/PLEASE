@@ -26,7 +26,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 # local project imports
 import LEEMFUNCTIONS as LF
 from bline import bline
-from configinfo import output_environment_config
 from colors import Palette
 from data import LeedData, LeemData
 from experiment import Experiment
@@ -200,7 +199,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Help menu
         self.genConfigInfoFileAction = QtWidgets.QAction("Generate User Config File", self)
-        self.genConfigInfoFileAction.triggered.connect(output_environment_config)
+        self.genConfigInfoFileAction.triggered.connect(self.viewer.generateConfigInfo)
         helpMenu.addAction(self.genConfigInfoFileAction)
 
     @staticmethod
@@ -580,6 +579,16 @@ class Viewer(QtWidgets.QWidget):
         f.setFrameShape(QtWidgets.QFrame.VLine)
         f.setFrameShadow(QtWidgets.QFrame.Sunken)
         return f
+
+    def generateConfigInfo(self):
+        """Call configinfo.output_environment_config() but push output to separate thread."""
+        self.thread = WorkerThread(task="GEN_CONFIG_INFO")
+        try:
+            self.thread.disconnect()
+        except TypeError:
+            # nothing to disconnect
+            pass
+        self.thread.start()
 
     def validateWidth(self):
         """Check user input and set crosshair line width."""
