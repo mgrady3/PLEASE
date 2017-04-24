@@ -27,14 +27,14 @@ This guide will demonstrate how to install the Anaconda Python Distribution, pro
 
 
 ### Obtaining Anaconda Python
-Continuum Analytics provides two options for using the Anaconda python distribution. You can install the full Anaconda python distirbution, which contains a python interpreter along with a large number of commonly used scientific packages. Or you can use Miniconda, which provides you access tyo the package manager and leaves it to the user to decide which python version and which packages to install.
+Continuum Analytics provides two options for using the Anaconda python distribution. You can install the full Anaconda python distirbution, which contains a python interpreter along with a large number of commonly used scientific packages. Or you can use Miniconda, which provides you access to the package manager, Conda, and leaves it to the user to decide which python version and which packages to install. Installing miniconda will require the smallest amount of disk space and smallest amount of downloaded data. Thus I suggest using Miniconda.
 
 1. The Anaconda Python Distribution can be downloaded from https://www.continuum.io/downloads
 1. Miniconda can be downloaded from https://conda.io/miniconda.html
 2. I recommend using the Python 3 version, however, this code will also work with python 2.7
 3. Follow the instructions provided by Continuum Analytics for installation and setup of Anaconda
-4. When the installation is finished, you should have access to the Anaconda Python distribution from your Command Line / Terminal
-5. Alongside the python distribution installed with Anaconda is a package and environment manager called 'conda'
+4. When the installation is finished, you should have access to the Anaconda Python distribution from your Command Line / Terminal.
+5. Alongside the python distribution installed with Anaconda is a package and environment manager called 'conda' You may need to restart your terminal before the 'conda' command is recognized.
 
 
 
