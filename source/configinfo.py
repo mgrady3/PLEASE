@@ -36,8 +36,9 @@ def output_environment_config():
     This can be used to help address issues that a User may face
     concerning problems with their installed libraries.
     """
-    packagepath = os.path.join(os.getcwd(), os.pardir)
-    outdir = os.path.join(packagepath, "config-info-output")
+    thispath = __file__
+    rootpath = os.path.join(os.path.dirname(thispath), os.pardir)
+    outdir = os.path.join(rootpath, "config-info-output")
     if not os.path.exists(outdir):
         os.mkdir(outdir)
     # outputpath = os.path.join(os.getcwd(), "config-info-output")
@@ -51,39 +52,47 @@ def output_environment_config():
         os.system(cmd)
         print("Successfully output conda environment info to {}".format(outdir))
 
-    with open(os.path.join(outdir, "configinfo" + get_date_string() + '.txt'), 'w') as f:
-        f.write("# User Runtime Configuration Settings # \n")
-        f.write("User Platform Info: \n\n")
-        pp = pprint.PrettyPrinter(indent=4, stream=f)
-        pp.pprint(platforminfo)
+    try:
+        with open(os.path.join(outdir, "configinfo" + get_date_string() + '.txt'), 'w') as f:
+            print("Writing output information to {}".format(f))
+            f.write("# User Runtime Configuration Settings # \n")
+            f.write("User Platform Info: \n\n")
+            pp = pprint.PrettyPrinter(indent=4, stream=f)
+            pp.pprint(platforminfo)
 
-        if pypath is not None:
-            f.write("User has $PYTHONPATH set to: {} \n".format(pypath))
-        else:
-            f.write("No $PYTHONPATH set\n\n")
-        f.write("Using Anaconda Python or Miniconda from Continuum Analytics = " + str(conda)+"\n")
-        f.write("Note- If Using Anaconda or Miniconda:")
-        f.write("\tThe conda environment settings are written to a separate file: Environment.yaml\n\n")
+            if pypath is not None:
+                f.write("User has $PYTHONPATH set to: {} \n".format(pypath))
+            else:
+                f.write("No $PYTHONPATH set\n\n")
+            f.write("Using Anaconda Python or Miniconda from Continuum Analytics = " + str(conda)+"\n")
+            f.write("Note- If Using Anaconda or Miniconda:")
+            f.write("\tThe conda environment settings are written to a separate file: Environment.yaml\n\n")
 
-        # Conda Environment.yaml should include pip instaleld modules
-        # For clarity they are included here
-        piptext = subprocess.check_output(["pip", "freeze"])  # returns bytes
-        piptext = piptext.decode()  # should be string now
-        f.write("Pip Installed Modules: \n")
-        for module in piptext.split("\n"):
-            f.write("\t" + module + "\n")
+            # Conda Environment.yaml should include pip instaleld modules
+            # For clarity they are included here
+            piptext = subprocess.check_output(["pip", "freeze"])  # returns bytes
+            piptext = piptext.decode()  # should be string now
+            f.write("Pip Installed Modules: \n")
+            for module in piptext.split("\n"):
+                f.write("\t" + module + "\n")
+    except OSError as e:
+        print("Error writing configuration information to disk.")
+        print(str(e))
+        return
     print("Successfully output config info text file to {}".format(outdir))
     return
 
 
 def get_date_string():
     """Get Today's date to append to config filename."""
+    print("Getting date/time infomration ...")
     today = pendulum.today()
     return str(today.month)+'-' + str(today.day) + '-' + str(today.year)
 
 
 def get_platform_info():
     """Used by output_environment_config to get User platform information."""
+    print("Getting system information ...")
     machine_type = platform.machine()
     cpu = platform.processor()
     system = platform.system()
@@ -99,6 +108,7 @@ def get_platform_info():
 
 def using_conda():
     """Check if User's python runtime is provided by Anaconda or Miniconda."""
+    print("Checking for Anaconda python ...")
     if "continuum" in sys.version.lower() or "anaconda" in sys.version.lower:
         return True
     return False
@@ -106,6 +116,7 @@ def using_conda():
 
 def check_python_path_set():
     """Check if User had $PYTHONPATH environment variable set."""
+    print("Checking for $PYTHONPATH ...")
     try:
         pypath = os.environ['PYTHONPATH']
     except KeyError:

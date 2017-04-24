@@ -63,7 +63,7 @@ class MainWindow(QtWidgets.QMainWindow):
     """Top level conatiner to wrap Viewer object.
 
     Provides dockable interface.
-    Provides Menubar - to be implemented later
+    Provides Menubar
     """
 
     def __init__(self, v=None):
