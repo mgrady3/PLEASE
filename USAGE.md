@@ -160,3 +160,16 @@ All python and other language source files are located in the /source/ directory
 
 4. If all dependencies are installed, the application should launch and the main Graphical User Interface should be visible.
 5. If the application does not start, error messages should be displayed in your Terminal. The most common sources of error will be missing dependencies. Ensure that you have setup a python environment and installed all the required dependencies as listed above. Also ensure that the correct python environment is active when trying to start PLEASE. When your PLEASE environment is active, you should see something similar to (PLEASE) at the start of the command prompt which indicates that the PLEASE environment is active.
+
+6. Windows Users: If you see a message along the lines of "ImportError: Failed to load DLL ..." This a most likely a mesasge indicating that the Qt/PyQt installation is not working properly. This tends to happen when PyQt5 is installed via pip and either the path is not set correctly or the Qt executables are not placed in the correct directories. As a workaround try this:
+
+    ```shell
+    pip uninstall pyqt5
+    ```
+    
+    ```shell
+    conda install pyqt=5
+    ```
+     ```shell
+    python /path/to/PLEASE/source/main.py
+    ```
