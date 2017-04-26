@@ -173,3 +173,39 @@ All python and other language source files are located in the /source/ directory
      ```shell
     python /path/to/PLEASE/source/main.py
     ```
+
+### Optional: Creating a launch script
+There are a number of ways to arrive at an executable file that will run the PLEASE software. 
+
+    A. Making main.py executeable
+        1. You will need to know the exact path to the python executable that your conda (or other) environment uses. For example, if you created an environment called PLEASE, the environment files should be installed in a path similar to $HOME/Anaconda/envs/PLEASE. where $HOME is your user home folder. On OS X this is /Users/YourUserName/
+        2. The python executable is located in the /bin/ directory of the above mentioned path: $HOME/Anaconda/envs/PLEASE/bin/python
+        3. Edit the main.py file and add the following line as the topmost line of the file:
+        
+            ```shell
+            #!/Users/YourUserName/Anaconda/envs/PLEASE/bin/python
+            ```
+        4. Now use the terminal to set the main.py file as executable:
+        
+            ```shell
+            sudo chmod u+x /path/to/PLEASE/source/main.py
+            ```
+        5. You should now be able to start PLEASE by double clicking the main.py file
+        6. **Note:** You must leave main.py in the source folder, so this method is less convenient. 
+        
+    B. Create a separate bash script that will execute main.py and make this file executable.
+        1. The instructions here will differ depending on your OS. Shown here are instructions of OS X
+        2. Create a file in your text editor of choice with the following lines
+        
+            ```shell
+            source activate PLEASE
+            python /path/to/PLEASE/source/main.py
+            ```
+        3. Save this file to any location you like and name it PLEASE-Start.command
+        4. Use your terminal to set the file as executable:
+            
+            ```shell
+            sudo chmod u+x /path/to/PLEASE-Start.command
+            ```
+        5. You should now be able to run PLEASE by double clicking the PLEASE-Start file
+     
