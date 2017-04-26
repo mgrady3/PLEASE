@@ -43,12 +43,12 @@ Continuum Analytics provides two options for using the Anaconda python distribut
 2. Execute the following line in the Terminal to create a conda environment called PLEASE:
 
     ```shell
-   
+
    conda create -n PLEASE
     ```
-    
+
     Note if you downloaded miniconda instead of the full Anaconda distribution, you will also want to specify the python version:
-    
+
     ```shell
     conda create -n PLEASE python=3.5
     ```
@@ -56,41 +56,41 @@ Continuum Analytics provides two options for using the Anaconda python distribut
 3. Activate the PLEASE environment with the following line:
 
     - OS X + Linux:
-    
+
     ```shell
-    
+
     source activate PLEASE
     ```
 
     - Windows:
     ```shell
-    
+
     activate PLEASE
     ```
 
 4. Now any packages installed will be isolated to this python environment
 5. At any time the environment can be deactivated/reactivated by executing the following commands:
 
-    - OS X and Linux: 
-    
+    - OS X and Linux:
+
         ```shell
         source deactivate
         ```
 
     - Windows:
-    
+
         ```shell
         deactivate
         ```
-    
+
     - OS X and Linux:
-        
+
         ```shell
         source activate PLEASE
         ```
 
     - Windows:
-        
+
         ```shell
         activate PLEASE
         ```
@@ -128,12 +128,12 @@ Continuum Analytics provides two options for using the Anaconda python distribut
 2. The source can be downloaded from the website or via the commandline if you have git installed
 
     a. download from the web by clicking the green "Clone or download". Select Download zip. Extract the Zip to your Desktop.
-    
+
     b. using git: from the command line navigate to your Desktop directory and then execute:
-        
-        
+
+
         git clone https://www.github.com/mgrady3/PLEASE
-       
+
 
 ### Source structure
 Within the main source tree for PLEASE, the outermost directory contains information files such as the README, the LICENSE, etc. Subdirectories for media files, test data, and source code are contained in the top level directory.
@@ -146,14 +146,14 @@ All python and other language source files are located in the /source/ directory
         ```shell
         source activate PLEASE
         ```
-    
+
     - Windows:
         ```shell
         activate PLEASE
         ````
 2. The file that needs to be executed to start the application is called main.py. This file resides in /PLEASE/source/.
 3. Execute the main python file to start the application:
-    
+
     ```shell
     python /path/to/PLEASE/source/main.py
     ```
@@ -161,12 +161,12 @@ All python and other language source files are located in the /source/ directory
 4. If all dependencies are installed, the application should launch and the main Graphical User Interface should be visible.
 5. If the application does not start, error messages should be displayed in your Terminal. The most common sources of error will be missing dependencies. Ensure that you have setup a python environment and installed all the required dependencies as listed above. Also ensure that the correct python environment is active when trying to start PLEASE. When your PLEASE environment is active, you should see something similar to (PLEASE) at the start of the command prompt which indicates that the PLEASE environment is active.
 
-6. ***Windows Users***: If you see a message along the lines of ***"ImportError: Failed to load DLL ..."*** This a most likely a mesasge indicating that the Qt/PyQt installation is not working properly. This tends to happen when PyQt5 is installed via pip and either the path is not set correctly or the Qt executables are not placed in the correct directories. As a workaround try this:
+6. **Windows Users**: If you see a message along the lines of **"ImportError: Failed to load DLL ..."** This a most likely a mesasge indicating that the Qt/PyQt installation is not working properly. This tends to happen when PyQt5 is installed via pip and either the path is not set correctly or the Qt executables are not placed in the correct directories. As a workaround try this:
 
     ```shell
     pip uninstall pyqt5
     ```
-    
+
     ```shell
     conda install pyqt=5
     ```
@@ -174,42 +174,45 @@ All python and other language source files are located in the /source/ directory
     python /path/to/PLEASE/source/main.py
     ```
 
+Make sure you execute the commands above after activating your PLEASE environment.
+
 ### Optional: Creating a launch script
-There are a number of ways to arrive at an executable file that will run the PLEASE software. 
+There are a number of ways to arrive at an executable file that will run the PLEASE software.
 
-Making main.py executeable
+**Option 1.** Making main.py executeable:
 
-    1. You will need to know the exact path to the python executable that your conda (or other) environment uses. For example, if you created an environment called PLEASE, the environment files should be installed in a path similar to $HOME/Anaconda/envs/PLEASE. where $HOME is your user home folder. On OS X this is /Users/YourUserName/
-    
-    2. The python executable is located in the /bin/ directory of the above mentioned path: $HOME/Anaconda/envs/PLEASE/bin/python
-    
-    3. Edit the main.py file and add the following line as the topmost line of the file:
-        
+1. You will need to know the exact path to the python executable that your conda (or other) environment uses. For example, if you created an environment called PLEASE, the environment files should be installed in a path similar to $HOME/Anaconda/envs/PLEASE. where $HOME is your user home folder. On OS X this is /Users/YourUserName/
+
+2. The python executable is located in the /bin/ directory of the above mentioned path: $HOME/Anaconda/envs/PLEASE/bin/python
+
+3. Edit the main.py file and add the following line as the topmost line of the file:
+
             #!/Users/YourUserName/Anaconda/envs/PLEASE/bin/python
-           
-    4. Now use the terminal to set the main.py file as executable:
-        
-          
-            sudo chmod u+x /path/to/PLEASE/source/main.py
-            
-    5. You should now be able to start PLEASE by double clicking the main.py file
-    
-    6. **Note:** You must leave main.py in the source folder, so this method is less convenient. 
-        
-Create a separate bash script that will execute main.py and make this file executable.
 
-    1. The instructions here will differ depending on your OS. Shown here are instructions of OS X
-    
-    2. Create a file in your text editor of choice with the following lines
-        
+4. Now use the terminal to set the main.py file as executable:
+
+            sudo chmod u+x /path/to/PLEASE/source/main.py
+
+5. You should now be able to start PLEASE by double clicking the main.py file
+
+6. **Note:** You must leave main.py in the source folder, so this method is less convenient.
+
+**Option 2.** Create a separate bash script that will execute main.py and make this file executable. **(Recommended)**
+
+1. The instructions here will differ depending on your OS. Shown here are instructions of OS X
+
+2. Create a file in your text editor of choice with the following lines
+
             source activate PLEASE
             python /path/to/PLEASE/source/main.py
-         
-    3. Save this file to any location you like and name it PLEASE-Start.command
-    
-    4. Use your terminal to set the file as executable:
+
+3. Save this file to any location you like and name it PLEASE-Start.command
+
+4. Use your terminal to set the file as executable:
 
             sudo chmod u+x /path/to/PLEASE-Start.command
 
-    5. You should now be able to run PLEASE by double clicking the PLEASE-Start file
-     
+5. You should now be able to run PLEASE by double clicking the PLEASE-Start file
+
+**Option 3.** Using a 'Freezing' package to create an executable (.app, .exe, etc...)
+There are a number of python packages that allow you to package your project source code alongside a python interpreter and all the required libraries and bundle all of this into an executable such as a .app file on OS X or a .exe on Windows. Some of the more popular options for doing this are Py2exe (Windows), Py2app (OS X), pyinstaller (OS X, Linux, Windows), and CxFreeze (OS X, Linux, Windows). A full explanation of how to create an executable bundle using these tools is beyond the scope of this document, but in principle it should be possible on all operating systems.
