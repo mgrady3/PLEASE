@@ -176,7 +176,6 @@ All python and other language source files are located in the /source/ directory
 
 ### Optional: Creating a launch script
 There are a number of ways to arrive at an executable file that will run the PLEASE software. 
-
     A. Making main.py executeable
         1. You will need to know the exact path to the python executable that your conda (or other) environment uses. For example, if you created an environment called PLEASE, the environment files should be installed in a path similar to $HOME/Anaconda/envs/PLEASE. where $HOME is your user home folder. On OS X this is /Users/YourUserName/
         2. The python executable is located in the /bin/ directory of the above mentioned path: $HOME/Anaconda/envs/PLEASE/bin/python
