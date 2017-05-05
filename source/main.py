@@ -1,16 +1,12 @@
 """
 PLEASE - The Python Low-energy Electron Analysis SuitE.
-
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
 Date: April, 2017
-
 Entrypoint for PLEASE.
-
 Usage:
     python /path/to/main.py
-
     This will load the application and instantiate the GUI.
 """
 # Stdlib and Scientific Stack imports
@@ -47,14 +43,19 @@ def main():
     thispath = __file__
     rootpath = os.path.join(os.path.dirname(thispath), os.pardir)
     imagedir = os.path.join(rootpath, "Images")
-    splashimagepath = os.path.join(imagedir, "Splash.png")
+    splashimagepath = os.path.join(imagedir, "Splash-scaled.png")
     splashimage = QtGui.QPixmap(splashimagepath)
     splashscreen = QtWidgets.QSplashScreen(splashimage, QtCore.Qt.WindowStaysOnTopHint)
     splashscreen.setMask(splashimage.mask())
 
     progressbar = QtWidgets.QProgressBar(splashscreen)
-    progressbar.setGeometry(splashscreen.width()/10, 9*splashscreen.height()/10,
-                            8*splashscreen.width()/10, splashscreen.height()/10)
+    xo = 32
+    yo = 460
+    w = 462
+    h = 25
+    # progressbar.setGeometry(splashscreen.width()/10, int(9.5*splashscreen.height()/10),
+    #                        8*splashscreen.width()/10, splashscreen.height()/20)
+    progressbar.setGeometry(xo, yo, w, h)
 
     splashscreen.show()
     app.processEvents()
