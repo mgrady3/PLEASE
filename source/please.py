@@ -849,7 +849,7 @@ class Viewer(QtWidgets.QWidget):
                 # no average I(V) to output
                 print("Warning: Configuration Setting to Output Average I(V) is enabled.")
                 print("However, no average has been calculated.")
-                print("Please disbale averaging or average current I(V) curves.")
+                print("Please disable averaging or average current I(V) curves.")
                 return
             # Query User for output directory
             # PyQt5 - This method now returns a tuple - we want only the first element
@@ -904,7 +904,7 @@ class Viewer(QtWidgets.QWidget):
                     return
                 for idx, tup in enumerate(self.LEEDclickpos):
                     outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                    rad = self.LEEDrects[idx][3]
+                    rad = int(self.LEEDrects[idx][3])
                     x = int(tup[0])
                     y = int(tup[1])
                     int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
