@@ -1502,7 +1502,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMcircs.append(circ)
         self.LEEMselections.append((xmp, ymp))  # (x, y format)
 
-        pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=2)
+        pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=4)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
         self.staticLEEMplot.addItem(pdi)
         self.staticLEEMplot.setTitle("LEEM-I(V)")
