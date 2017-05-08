@@ -195,7 +195,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
-        LEEDMenu.addAction(self.toggleLEEDReflectivityAction)
+        # LEEDMenu.addAction(self.toggleLEEDReflectivityAction)  # TODO: If this feature is added; enable menu action
 
         # Help menu
         self.genConfigInfoFileAction = QtWidgets.QAction("Generate User Config File", self)
