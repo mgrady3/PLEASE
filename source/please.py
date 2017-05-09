@@ -195,7 +195,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.autoBackground = QtWidgets.QAction("Auto Background Selection", self)
         self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection)
-        LEEDMenu.addAction(self.autoBackground)
+        # LEEDMenu.addAction(self.autoBackground)  # TODO: reenable this when feature is completed.
 
         self.undoSelection = QtWidgets.QAction("Undo Selection", self)
         self.undoSelection.triggered.connect(self.viewer.undoLEEDSelection)
