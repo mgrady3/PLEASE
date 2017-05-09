@@ -193,6 +193,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.averageIVAction.triggered.connect(self.viewer.averageLEEDIV)
         LEEDMenu.addAction(self.averageIVAction)
 
+        self.autoBackground = QtWidgets.QAction("Auto Background Selection", self)
+        self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection)
+        LEEDMenu.addAction(self.autoBackground)
+
+        self.undoSelection = QtWidgets.QAction("Undo Selection", self)
+        self.undoSelection.triggered.connect(self.viewer.undoLEEDSelection)
+        LEEDMenu.addAction(self.undoSelection)
+
         self.toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
         # LEEDMenu.addAction(self.toggleLEEDReflectivityAction)  # TODO: If this feature is added; enable menu action
@@ -1622,6 +1630,10 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDclickpos.append((xmp, ymp))  # store x, y coordinate of mouse click in array coordinates
             # print("Click registered at array coordinates: x={0}, y={1}".format(xmp, ymp))
 
+    def LEEDAutoBackgroundSelection(self):
+        """Automate background selection based on User beam selection."""
+        pass
+
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
         if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
@@ -1689,6 +1701,20 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDivplotwidget.plot(self.leeddat.elist,
                                        self.LEEDAverageIV,
                                        pen=pg.mkPen(self.qcolors[0], width=3))
+
+    def undoLEEDSelection(self):
+        """Remove last User selection."""
+        if (not self.LEEDclicks > 0 or
+                not self.LEEDrects or
+                not self.LEEDclickpos or
+                not self.hasdisplayedLEEDdata):
+            return
+
+        self.LEEDclicks -= 1
+        self.LEEDimagewidget.scene().removeItem(self.LEEDrects.pop()[0])
+        del self.LEEDclickpos[-1]
+        self.LEEDivplotwidget.clear()  # reset the IV plot and plot the non-deleted items
+        self.processLEEDIV()
 
     def clearLEEDIV(self):
         """Triggered by menu action to clear all LEED selections."""
