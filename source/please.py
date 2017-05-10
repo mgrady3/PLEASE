@@ -195,7 +195,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.autoBackground = QtWidgets.QAction("Auto Background Selection", self)
         self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection)
-        # LEEDMenu.addAction(self.autoBackground)  # TODO: reenable this when feature is completed.
+        LEEDMenu.addAction(self.autoBackground)
 
         self.undoSelection = QtWidgets.QAction("Undo Selection", self)
         self.undoSelection.triggered.connect(self.viewer.undoLEEDSelection)
@@ -1632,7 +1632,95 @@ class Viewer(QtWidgets.QWidget):
 
     def LEEDAutoBackgroundSelection(self):
         """Automate background selection based on User beam selection."""
-        pass
+        if (not self.hasdisplayedLEEDdata or
+                not self.LEEDrects or
+                not self.LEEDclickpos):
+            return
+
+        # Adjust these settings as needed
+        buf = 3  # set 3 pixel buffer around User rect
+        beam_to_background_ratio = 3  # side length of beam box = 3 * side length of background box (see below)
+        gap_size_ratio = 4  # adjust the gap offset for side boxes from center horizontal line (see below)
+
+        self.LEEDBackgroundrects = []
+        self.LEEDBackgroundcenters = []
+        for idx, item in enumerate(self.LEEDrects):
+            rect = item[1]
+            size = 2*item[3]
+            if size % 2 != 0:
+                size += 1
+            r1 = int(size / 2)
+
+            backgroundsize = size // beam_to_background_ratio
+            print("Selection size: {0}, Background size: {1}".format(size, backgroundsize))
+            r2 = int(backgroundsize / 2)
+
+            gap = int((size - 2*backgroundsize) / gap_size_ratio)
+
+            x0 = int(rect.center().x())
+            y0 = int(rect.center().y())
+            xa = self.LEEDclickpos[idx][0]  # array coordinates
+            ya = self.LEEDclickpos[idx][1]  # array cooridnates
+
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            pen.setBrush(QtCore.Qt.white)
+
+            # Create Rectangular patches and add to scene
+            topbox_topleftcorner = QtCore.QPointF(x0 - r2, y0 - r1 - buf - 2*r2)
+            top_box = QtCore.QRectF(topbox_topleftcorner, QtCore.QSizeF(backgroundsize, backgroundsize))
+            top_box_item = self.LEEDimage.scene().addRect(top_box, pen)
+            top_center = (xa, ya - r1 - buf - r2)  # array coordinates
+
+            bottombox_topleftcorner = QtCore.QPointF(x0 - r2, y0 + r1 + buf)
+            bottom_box = QtCore.QRectF(bottombox_topleftcorner, QtCore.QSizeF(backgroundsize, backgroundsize))
+            bottom_box_item = self.LEEDimage.scene().addRect(bottom_box, pen)
+            bottom_center = (xa, ya + r1 + buf + r2)  # array coordinates
+
+            righttopbox_tlc = QtCore.QPointF(x0 + r1 + buf, y0 - gap - 2*r2)
+            righttop_box = QtCore.QRectF(righttopbox_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
+            righttop_box_item = self.LEEDimage.scene().addRect(righttop_box, pen)
+            righttop_center = (xa + r1 + buf + r2, ya - gap - r2)
+
+            rightbottom_tlc = QtCore.QPointF(x0 + r1 + buf, y0 + gap)
+            rightbottom_box = QtCore.QRectF(rightbottom_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
+            rightbottom_box_item = self.LEEDimage.scene().addRect(rightbottom_box, pen)
+            rightbottom_center = (xa + r1 + buf + r2, ya + gap + r2)
+
+            lefttopbox_tlc = QtCore.QPointF(x0 - r1 - buf - 2*r2, y0 - gap - 2*r2)
+            lefttop_box = QtCore.QRectF(lefttopbox_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
+            lefttop_box_item = self.LEEDimage.scene().addRect(lefttop_box, pen)
+            lefttop_center = (xa - r1 - buf - r2, ya - gap - r2)
+
+            leftbottom_tlc = QtCore.QPointF(x0 - r1 - buf - 2*r2, y0 + gap)
+            leftbottom_box = QtCore.QRectF(leftbottom_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
+            leftbottom_box_item = self.LEEDimage.scene().addRect(leftbottom_box, pen)
+            leftbottom_center = (xa - r1 - buf - r2, ya + gap + r2)
+
+            # Add patches to container for plotting
+            self.LEEDBackgroundrects.append((top_box_item, top_box, pen, r2))
+            self.LEEDBackgroundcenters.append(top_center)
+
+            self.LEEDBackgroundrects.append((bottom_box_item, bottom_box, pen, r2))
+            self.LEEDBackgroundcenters.append(bottom_center)
+
+            self.LEEDBackgroundrects.append((righttop_box_item, righttop_box, pen, r2))
+            self.LEEDBackgroundcenters.append(righttop_center)
+
+            self.LEEDBackgroundrects.append((rightbottom_box_item, rightbottom_box, pen, r2))
+            self.LEEDBackgroundcenters.append(rightbottom_center)
+
+            self.LEEDBackgroundrects.append((lefttop_box_item, lefttop_box, pen, r2))
+            self.LEEDBackgroundcenters.append(lefttop_center)
+
+            self.LEEDBackgroundrects.append((leftbottom_box_item, leftbottom_box, pen, r2))
+            self.LEEDBackgroundcenters.append(leftbottom_center)
+
+        self.LEEDrects.extend(self.LEEDBackgroundrects)
+        del self.LEEDBackgroundrects
+        self.LEEDclickpos.extend(self.LEEDBackgroundcenters)
+        del self.LEEDBackgroundcenters
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
@@ -1660,7 +1748,10 @@ class Viewer(QtWidgets.QWidget):
             # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-            self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
+            # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
+            self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                       ilist,
+                                       pen=pg.mkPen(self.LEEDrects[idx][2].color(), width=4))
 
     def averageLEEDIV(self):
         """Extract IV from current user selections and average the curves."""
