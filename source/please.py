@@ -250,7 +250,8 @@ class Viewer(QtWidgets.QWidget):
         """Specific initialization.
 
         Certain attributes require initialization so that their signals
-        can be accessed.
+        can be accessed. Others need to be initialized since many methods
+        rely on checking if certain structures contain data.
         """
         self.staticLEEMplot = pg.PlotWidget()  # not displayed until User clicks LEEM image
         self.staticLEEMplot.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
@@ -271,8 +272,8 @@ class Viewer(QtWidgets.QWidget):
         self.qcolors = Palette().qcolors
         self.leemdat = LeemData()
         self.leeddat = LeedData()
-        self.LEEMselections = []  # store coords of leem clicks
-        self.LEEDclickpos = []  # store coords of leed clicks
+        self.LEEMselections = []  # store coords of leem clicks in array coordinates
+        self.LEEDclickpos = []  # store coords of leed clicks in array coordinates
         self.LEEMRects = []
         self.LEEMRectWindowEnabled = False
         self.LEEMLineProfileEnabled = False
@@ -290,6 +291,8 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDAverageIV = []
         self.outputLEEDAverage = False
 
+        self.LEEDBackgroundrects = []
+        self.LEEDBackgroundcenters = []  # container of tuples (xa, ya) in array coordinates
         self.num_background_per_beam = 6
 
         self.exp = None  # overwritten on load with Experiment object

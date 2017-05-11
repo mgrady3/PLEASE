@@ -1,5 +1,6 @@
 """
 PLEASE - The Python Low-energy Electron Analysis SuitE.
+
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
