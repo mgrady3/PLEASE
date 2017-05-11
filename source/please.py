@@ -290,6 +290,8 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDAverageIV = []
         self.outputLEEDAverage = False
 
+        self.num_background_per_beam = 6
+
         self.exp = None  # overwritten on load with Experiment object
         self.hasdisplayedLEEMdata = False
         self.hasdisplayedLEEDdata = False
@@ -826,6 +828,8 @@ class Viewer(QtWidgets.QWidget):
                 print("Error getting output file name.")
                 return
             outname = str(outname)  # cast from QString ot string
+            if not outname:
+                return  # User clicked cancel
 
             outfile = os.path.join(outdir, outname)
             if self.threads:
@@ -880,6 +884,8 @@ class Viewer(QtWidgets.QWidget):
                 print("Error getting output file name.")
                 return
             outname = str(outname)  # cast from QString ot string
+            if not outname:
+                return  # User clicked cancel
 
             outfile = os.path.join(outdir, outname)
             if self.threads:
@@ -910,26 +916,81 @@ class Viewer(QtWidgets.QWidget):
                 if len(self.LEEDrects) != len(self.LEEDclickpos):
                     print("Error: number of LEED widnows does not match number of Click coordinates.")
                     return
-                for idx, tup in enumerate(self.LEEDclickpos):
-                    outfile = os.path.join(outdir, outname+str(idx)+'.txt')
-                    rad = int(self.LEEDrects[idx][3])
-                    x = int(tup[0])
-                    y = int(tup[1])
-                    int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
-                                                    x - rad:x + rad + 1, :]
-                    # get average intensity per window
-                    ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
-                    if self.smoothLEEDoutput:
-                        ilist = LF.smooth(ilist,
-                                          window_len=self.LEEDWindowLen,
-                                          window_type=self.LEEDWindowType)
-                    thread = WorkerThread(task='OUTPUT_TO_TEXT',
-                                               elist=self.leeddat.elist,
-                                               ilist=ilist,
-                                               name=outfile)
-                    thread.finished.connect(self.output_complete)
-                    self.threads.append(thread)
-                    thread.start()
+                if self.LEEDBackgroundrects and \
+                   len(self.LEEDBackgroundcenters) != len(self.LEEDBackgroundrects):
+                    print("Error: Mismatch in number of background selections.")
+                    return
+
+                if self.LEEDBackgroundrects and \
+                   len(self.LEEDBackgroundrects) != 6 * len(self.LEEDrects):
+                    print("Error: Mismatch between number of beam selections and number of background selections.")
+                    return
+
+                if self.LEEDBackgroundrects:
+                    # There are background curves to output and all sizes match
+                    for beam_idx, tup in enumerate(self.LEEDclickpos):
+                        outfile = os.path.join(outdir, outname+'beam_'+str(beam_idx)+'.txt')
+                        rad = int(self.LEEDrects[beam_idx][3])
+                        x = int(tup[0])
+                        y = int(tup[1])
+                        int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
+                                                        x - rad:x + rad + 1, :]
+                        # get average intensity per window
+                        ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                        if self.smoothLEEDoutput:
+                            ilist = LF.smooth(ilist,
+                                              window_len=self.LEEDWindowLen,
+                                              window_type=self.LEEDWindowType)
+                        thread = WorkerThread(task='OUTPUT_TO_TEXT',
+                                                   elist=self.leeddat.elist,
+                                                   ilist=ilist,
+                                                   name=outfile)
+                        thread.finished.connect(self.output_complete)
+                        self.threads.append(thread)
+                        thread.start()
+                        for idx, tup in enumerate(self.LEEDBackgroundcenters[beam_idx:
+                                                                             beam_idx+self.num_background_per_beam]):
+                            outfile = os.path.join(outdir, outname+'beam_'+str(beam_idx)+'bkgd_'+str(idx)+'.txt')
+                            rad = int(self.LEEDBackgroundrects[idx][3])
+                            x = int(tup[0])
+                            y = int(tup[1])
+                            int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
+                                                            x - rad:x + rad + 1, :]
+                            # get average intensity per window
+                            ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                            if self.smoothLEEDoutput:
+                                ilist = LF.smooth(ilist,
+                                                  window_len=self.LEEDWindowLen,
+                                                  window_type=self.LEEDWindowType)
+                            thread = WorkerThread(task='OUTPUT_TO_TEXT',
+                                                       elist=self.leeddat.elist,
+                                                       ilist=ilist,
+                                                       name=outfile)
+                            thread.finished.connect(self.output_complete)
+                            self.threads.append(thread)
+                            thread.start()
+                else:
+                    # There are no background curves to output
+                    for idx, tup in enumerate(self.LEEDclickpos):
+                        outfile = os.path.join(outdir, outname+str(idx)+'.txt')
+                        rad = int(self.LEEDrects[idx][3])
+                        x = int(tup[0])
+                        y = int(tup[1])
+                        int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
+                                                        x - rad:x + rad + 1, :]
+                        # get average intensity per window
+                        ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                        if self.smoothLEEDoutput:
+                            ilist = LF.smooth(ilist,
+                                              window_len=self.LEEDWindowLen,
+                                              window_type=self.LEEDWindowType)
+                        thread = WorkerThread(task='OUTPUT_TO_TEXT',
+                                                   elist=self.leeddat.elist,
+                                                   ilist=ilist,
+                                                   name=outfile)
+                        thread.finished.connect(self.output_complete)
+                        self.threads.append(thread)
+                        thread.start()
 
     def validate_smoothing_settings(self, but=None):
         """Validate User input from Config Tab smoothing settings."""
@@ -1637,10 +1698,14 @@ class Viewer(QtWidgets.QWidget):
                 not self.LEEDclickpos):
             return
 
-        # Adjust these settings as needed
-        buf = 3  # set 3 pixel buffer around User rect
-        beam_to_background_ratio = 3  # side length of beam box = 3 * side length of background box (see below)
-        gap_size_ratio = 4  # adjust the gap offset for side boxes from center horizontal line (see below)
+        # Background Selection Automation Config Settings
+
+        buf = 5  # set small pixel buffer around User rect so that background boxes don't overlap user selection.
+
+        # side length of beam box = beam_to_background_ratio * side length of background box (see for loop)
+        beam_to_background_ratio = 3
+
+        gap_size_ratio = 4  # adjust the gap offset for side boxes from center horizontal line (see for loop)
 
         self.LEEDBackgroundrects = []
         self.LEEDBackgroundcenters = []
@@ -1649,6 +1714,10 @@ class Viewer(QtWidgets.QWidget):
             size = 2*item[3]
             if size % 2 != 0:
                 size += 1
+            if size < 10:
+                print("Warning: One or more Beam Selection boxes is smaller than 10 x 10.")
+                print("Use larger selection box in order to make use of automated background selection.")
+                return
             r1 = int(size / 2)
 
             backgroundsize = size // beam_to_background_ratio
@@ -1657,8 +1726,8 @@ class Viewer(QtWidgets.QWidget):
 
             gap = int((size - 2*backgroundsize) / gap_size_ratio)
 
-            x0 = int(rect.center().x())
-            y0 = int(rect.center().y())
+            x0 = int(rect.center().x())  # scene coordinates
+            y0 = int(rect.center().y())  # scene coordinates
             xa = self.LEEDclickpos[idx][0]  # array coordinates
             ya = self.LEEDclickpos[idx][1]  # array cooridnates
 
@@ -1668,37 +1737,81 @@ class Viewer(QtWidgets.QWidget):
             pen.setBrush(QtCore.Qt.white)
 
             # Create Rectangular patches and add to scene
+
+            top_center = (xa, ya - r1 - buf - r2)  # array coordinates
+            if top_center[0] + r2 >= self.leeddat.dat3d.shape[1] or \
+               top_center[0] - r2 <= 0 or \
+               top_center[1] - r2 <= 0 or \
+               top_center[1] + r2 >= self.leeddat.dat3d.shape[0]:
+                print("Warning: One or more beams is located too close to image edge.")
+                print("Can't perform Auto Background Selection near edge.")
+                return
             topbox_topleftcorner = QtCore.QPointF(x0 - r2, y0 - r1 - buf - 2*r2)
             top_box = QtCore.QRectF(topbox_topleftcorner, QtCore.QSizeF(backgroundsize, backgroundsize))
             top_box_item = self.LEEDimage.scene().addRect(top_box, pen)
-            top_center = (xa, ya - r1 - buf - r2)  # array coordinates
 
+            bottom_center = (xa, ya + r1 + buf + r2)  # array coordinates
+            if bottom_center[0] + r2 >= self.leeddat.dat3d.shape[1] or \
+               bottom_center[0] - r2 <= 0 or \
+               bottom_center[1] - r2 <= 0 or \
+               bottom_center[1] + r2 >= self.leeddat.dat3d.shape[0]:
+                print("Warning: One or more beams is located too close to image edge.")
+                print("Can't perform Auto Background Selection near edge.")
+                return
             bottombox_topleftcorner = QtCore.QPointF(x0 - r2, y0 + r1 + buf)
             bottom_box = QtCore.QRectF(bottombox_topleftcorner, QtCore.QSizeF(backgroundsize, backgroundsize))
             bottom_box_item = self.LEEDimage.scene().addRect(bottom_box, pen)
-            bottom_center = (xa, ya + r1 + buf + r2)  # array coordinates
 
+            righttop_center = (xa + r1 + buf + r2, ya - gap - r2)
+            if righttop_center[0] + r2 >= self.leeddat.dat3d.shape[1] or \
+               righttop_center[0] - r2 <= 0 or \
+               righttop_center[1] - r2 <= 0 or \
+               righttop_center[1] + r2 >= self.leeddat.dat3d.shape[0]:
+                print("Warning: One or more beams is located too close to image edge.")
+                print("Can't perform Auto Background Selection near edge.")
+                return
             righttopbox_tlc = QtCore.QPointF(x0 + r1 + buf, y0 - gap - 2*r2)
             righttop_box = QtCore.QRectF(righttopbox_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
             righttop_box_item = self.LEEDimage.scene().addRect(righttop_box, pen)
-            righttop_center = (xa + r1 + buf + r2, ya - gap - r2)
 
+            rightbottom_center = (xa + r1 + buf + r2, ya + gap + r2)
+            if rightbottom_center[0] + r2 >= self.leeddat.dat3d.shape[1] or \
+               rightbottom_center[0] - r2 <= 0 or \
+               rightbottom_center[1] - r2 <= 0 or \
+               rightbottom_center[1] + r2 >= self.leeddat.dat3d.shape[0]:
+                print("Warning: One or more beams is located too close to image edge.")
+                print("Can't perform Auto Background Selection near edge.")
+                return
             rightbottom_tlc = QtCore.QPointF(x0 + r1 + buf, y0 + gap)
             rightbottom_box = QtCore.QRectF(rightbottom_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
             rightbottom_box_item = self.LEEDimage.scene().addRect(rightbottom_box, pen)
-            rightbottom_center = (xa + r1 + buf + r2, ya + gap + r2)
 
+            lefttop_center = (xa - r1 - buf - r2, ya - gap - r2)
+            if lefttop_center[0] + r2 >= self.leeddat.dat3d.shape[1] or \
+               lefttop_center[0] - r2 <= 0 or \
+               lefttop_center[1] - r2 <= 0 or \
+               lefttop_center[1] + r2 >= self.leeddat.dat3d.shape[0]:
+                print("Warning: One or more beams is located too close to image edge.")
+                print("Can't perform Auto Background Selection near edge.")
+                return
             lefttopbox_tlc = QtCore.QPointF(x0 - r1 - buf - 2*r2, y0 - gap - 2*r2)
             lefttop_box = QtCore.QRectF(lefttopbox_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
             lefttop_box_item = self.LEEDimage.scene().addRect(lefttop_box, pen)
-            lefttop_center = (xa - r1 - buf - r2, ya - gap - r2)
 
+            leftbottom_center = (xa - r1 - buf - r2, ya + gap + r2)
+            if leftbottom_center[0] + r2 >= self.leeddat.dat3d.shape[1] or \
+               leftbottom_center[0] - r2 <= 0 or \
+               leftbottom_center[1] - r2 <= 0 or \
+               leftbottom_center[1] + r2 >= self.leeddat.dat3d.shape[0]:
+                print("Warning: One or more beams is located too close to image edge.")
+                print("Can't perform Auto Background Selection near edge.")
+                return
             leftbottom_tlc = QtCore.QPointF(x0 - r1 - buf - 2*r2, y0 + gap)
             leftbottom_box = QtCore.QRectF(leftbottom_tlc, QtCore.QSizeF(backgroundsize, backgroundsize))
             leftbottom_box_item = self.LEEDimage.scene().addRect(leftbottom_box, pen)
-            leftbottom_center = (xa - r1 - buf - r2, ya + gap + r2)
 
             # Add patches to container for plotting
+
             self.LEEDBackgroundrects.append((top_box_item, top_box, pen, r2))
             self.LEEDBackgroundcenters.append(top_center)
 
@@ -1716,11 +1829,6 @@ class Viewer(QtWidgets.QWidget):
 
             self.LEEDBackgroundrects.append((leftbottom_box_item, leftbottom_box, pen, r2))
             self.LEEDBackgroundcenters.append(leftbottom_center)
-
-        self.LEEDrects.extend(self.LEEDBackgroundrects)
-        del self.LEEDBackgroundrects
-        self.LEEDclickpos.extend(self.LEEDBackgroundcenters)
-        del self.LEEDBackgroundcenters
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
@@ -1752,6 +1860,30 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDivplotwidget.plot(self.leeddat.elist,
                                        ilist,
                                        pen=pg.mkPen(self.LEEDrects[idx][2].color(), width=4))
+            if self.LEEDBackgroundrects:
+                for idx, tup in enumerate(self.LEEDBackgroundcenters):
+                    # center coordinates
+                    xc = tup[0]
+                    yc = tup[1]
+
+                    # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
+                    rad = int(self.LEEDBackgroundrects[idx][3])  # cast to int to ensure array indexing uses ints
+
+                    # top left corner in array coordinates
+                    xtl = xc - rad
+                    ytl = yc - rad
+
+                    int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
+                                                    xtl:xtl + 2*rad + 1, :]
+                    # store average intensity per window
+                    ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                    # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+                    if self.smoothLEEDplot:
+                        ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
+                    # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
+                    self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                               ilist,
+                                               pen=pg.mkPen(self.LEEDBackgroundrects[idx][2].color(), width=4))
 
     def averageLEEDIV(self):
         """Extract IV from current user selections and average the curves."""
@@ -1814,11 +1946,15 @@ class Viewer(QtWidgets.QWidget):
             # items stored as (QRectF, QPen)
             for tup in self.LEEDrects:
                 self.LEEDimagewidget.scene().removeItem(tup[0])
-            self.LEEDrects = []
-            self.LEEDclickpos = []
-            self.LEEDclicks = 0
-            self.LEEDclickpos = []
-            self.LEEDAverageIV = []
+        if self.LEEDBackgroundrects:
+            for tup in self.LEEDBackgroundrects:
+                self.LEEDimagewidget.scene().removeItem(tup[0])
+        self.LEEDrects = []
+        self.LEEDBackgroundrects = []
+        self.LEEDclickpos = []
+        self.LEEDBackgroundcenters = []
+        self.LEEDclicks = 0
+        self.LEEDAverageIV = []
 
     def clearLEEMIV(self):
         """Clear User selections from LEEM image and clear IV plot."""
