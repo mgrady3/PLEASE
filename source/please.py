@@ -1232,6 +1232,8 @@ class Viewer(QtWidgets.QWidget):
         """Use mouse mouse clicks to generate rectangular window for I(V) extraction."""
         if not self.hasdisplayedLEEMdata or event.currentItem is None or event.button() == 2:
             return
+        if event.button() == 2:
+            return  # filter out right click events
         if len(self.qcolors) <= len(self.LEEMRects):
             print("Maximum number of LEEM Selections reached. Please clear current selection.")
             return
@@ -1384,6 +1386,8 @@ class Viewer(QtWidgets.QWidget):
         """Create QGraphicsLineItem objects from user click positions."""
         if not self.hasdisplayedLEEMdata:
             return
+        if event.button() == 2:
+            return  # filter out right click events
         if len(self.qcolors) <= len(self.LEEMLines):
             print("Maximum number of LEEM Line Selection reached. Please clear current selections.")
             return
@@ -1462,6 +1466,9 @@ class Viewer(QtWidgets.QWidget):
         """
         if not self.hasdisplayedLEEMdata:
             return
+
+        if event.button() == 2:
+            return  # filter out 'right click' events
 
         # clicking outside image area may cause event.currentItem
         # to be None. This would then raise an error when trying to
@@ -1577,6 +1584,9 @@ class Viewer(QtWidgets.QWidget):
         """User click registered in LEEDimage area."""
         if not self.hasdisplayedLEEDdata or event.currentItem is None:
             return
+
+        if event.button() == 2:
+            return  # filter out 'right click' events
 
         # Ensure number of LEED windows remains less than the max colors
         if len(self.qcolors) <= self.LEEDclicks:
