@@ -6,7 +6,7 @@ PLEASE: The Python Low-energy Electron Analysis SuitE - Enabling rapid analysis 
 ### Current Version: 1.0.0
 
 # What is it?
-The **PLEASE** software package provides an open source cross-platform graphical user interface for rapid analysis and visualization of Low Energy Electrom Microscopy (LEEM) and selected area micro-spot size Low Energy Electron Diffraction (µLEED) data sets. PLEASE is written in python using the PyQt and pyqtgraph python bindings for the Qt graphics framework.
+The **PLEASE** software package provides an open source cross-platform graphical user interface for rapid analysis and visualization of Low Energy Electron Microscopy (LEEM) and selected area micro-spot size Low Energy Electron Diffraction (µLEED) data sets. PLEASE is written in python using the PyQt and pyqtgraph python bindings for the Qt graphics framework.
 
 # Why is it?
 LEEM and µLEED are powerful techniques for surface analysis of many types of novel materials and are especially useful for the study of two-dimensional (2D) materials. Specific emphasis is placed on the analysis of Intensity-Voltage (IV) data sets. IV curves map the scattered or reflected electron intensity as a function of incident energy. The structure of these curves is inherently linked to the atomic surface structure of the target material. Given that the electronic properties of many 2D materials are linked to the surface structure, LEEM and µLEED provide unique avenues for the study of novel material properties in reduced dimensions and may help guide future application of these materials.
@@ -45,7 +45,13 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
   * Byte Order (Required for loading raw data) [string] {"L" for little endian, "B" for big endian}
   * Data path [string pointing to folder containing data files]
 
-An example file and instructions for creating your own experiment configuration files can be found in the subdirectory Experiment-YAML of this repository. Finally, a few test data sets are provided to ensure PLEASE is functioning properly. Each of these sets is accompanied by a .yaml experiment configuration file that must be edited with he correct data paths.
+An example file and instructions for creating your own experiment configuration files can be found in the subdirectory Experiment-YAML of this repository. Finally, a few test data sets are provided to ensure PLEASE is functioning properly. Each of these sets is accompanied by a .yaml experiment configuration file that must be edited with the correct data paths.
+
+## Installation
+For detailed instructions on how to install and run PLEASE, see the file INSTALLATION.md contained within this source repository.
+
+## Usage
+For instructions on usage for LEEM and LEED data sets, see the file USAGE.md contained within this source repository.
 
  ## Contributing
 

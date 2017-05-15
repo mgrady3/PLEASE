@@ -16,9 +16,12 @@ Version 1.0.0 :
     * LEED Beam averaging (easy)
     * ~~LEED Background analysis~~ (easy - but needs some effort to streamline old code) Implemented in dev branch (April 2017)
 
+* ~~LEED-I(V) Background window selection automation~~ (May 2017)
+* ~~UI window for generating YAML config files from User input~~ (May 2017)
+
+
 Future:
 * Possible Features for future releases
-    * LEED-I(V) Background window selection automation
     * LEEM Line Profile I(V) extraction automation
     * LEEM/LEED data in HDF5 format
     * File Format conversion automation
