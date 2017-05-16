@@ -1701,6 +1701,8 @@ class Viewer(QtWidgets.QWidget):
             # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
             curves.append(ilist)
         self.LEEDAverageIV = list(map(lambda l: sum(l)/float(len(l)), zip(*curves)))
+        # clear current I(V) plot then plot the averaged I(V) data
+        self.LEEDivplotwidget.clear()
         if self.smoothLEEDplot:
             self.LEEDivplotwidget.plot(self.leeddat.elist,
                                        LF.smooth(self.LEEDAverageIV,
