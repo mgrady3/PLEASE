@@ -708,7 +708,7 @@ class Viewer(QtWidgets.QWidget):
             return
         self.tabs.setCurrentIndex(0)
         if self.hasdisplayedLEEMdata:
-            # clear old data
+            # clear old data - This fixes bug witih loading data with different sizes.
             self.LEEMimageplotwidget.clear()
         if self.exp.data_type.lower() == 'raw':
             try:
