@@ -48,10 +48,10 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
 An example file and instructions for creating your own experiment configuration files can be found in the subdirectory Experiment-YAML of this repository. Finally, a few test data sets are provided to ensure PLEASE is functioning properly. Each of these sets is accompanied by a .yaml experiment configuration file that must be edited with the correct data paths.
 
 ## Installation
-For detailed instructions on how to install and run PLEASE, see the file INSTALLATION.md contained within this source repository.
+For detailed instructions on how to install and run PLEASE, see the file [INSTALLATION.md](INSTALLATION.md) contained within this source repository.
 
 ## Usage
-For instructions on usage for LEEM and LEED data sets, see the file USAGE.md contained within this source repository.
+For instructions on usage for LEEM and LEED data sets, see the file [USAGE.md](USAGE.md) contained within this source repository.
 
  ## Contributing
 
@@ -59,4 +59,4 @@ For instructions on usage for LEEM and LEED data sets, see the file USAGE.md con
 
  Is there a feature you would love to see? Is there a bug that needs to be fixed? Do you have an alternate file format you would like to see supported?
  There are a number of options for addressing these issues. First and foremost, feel free to open an Issue on the main Github page. This is a great location for discussion about bugs, new features, file formats, etc...
- Second, You are welcome to fork the project and edit the code to suit your own needs. Finally, rather than forking the project to make your own edits, I welcome contributions to the codebase from users. For more information about how to contribute, please see the CONTRIBUTING.md file located in the main source tree.
+ Second, You are welcome to fork the project and edit the code to suit your own needs. Finally, rather than forking the project to make your own edits, I welcome contributions to the codebase from users. For more information about how to contribute, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file located in the main source tree.
