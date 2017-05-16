@@ -161,7 +161,7 @@ All python and other language source files are located in the /source/ directory
 4. If all dependencies are installed, the application should launch and the main Graphical User Interface should be visible.
 5. If the application does not start, error messages should be displayed in your Terminal. The most common sources of error will be missing dependencies. Ensure that you have setup a python environment and installed all the required dependencies as listed above. Also ensure that the correct python environment is active when trying to start PLEASE. When your PLEASE environment is active, you should see something similar to (PLEASE) at the start of the command prompt which indicates that the PLEASE environment is active.
 
-6. **Windows Users**: If you see a message along the lines of **"ImportError: Failed to load DLL ..."** This a most likely a mesasge indicating that the Qt/PyQt installation is not working properly. This tends to happen when PyQt5 is installed via pip and either the path is not set correctly or the Qt executables are not placed in the correct directories. As a workaround try this:
+6. **Windows Users**: If you see a message along the lines of **"ImportError: Failed to load DLL ..."** This a most likely a message indicating that the Qt/PyQt installation is not working properly. This tends to happen when PyQt5 is installed via pip and either the path is not set correctly or the Qt executables are not placed in the correct directories. As a workaround try this:
 
     ```shell
     pip uninstall pyqt5
@@ -179,7 +179,7 @@ Make sure you execute the commands above after activating your PLEASE environmen
 ### Optional: Creating a launch script
 There are a number of ways to arrive at an executable file that will run the PLEASE software.
 
-**Option 1.** Making main.py executeable:
+**Option 1.** Making main.py executable:
 
 1. You will need to know the exact path to the python executable that your conda (or other) environment uses. For example, if you created an environment called PLEASE, the environment files should be installed in a path similar to $HOME/Anaconda/envs/PLEASE. where $HOME is your user home folder. On OS X this is /Users/YourUserName/
 
