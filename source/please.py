@@ -707,6 +707,9 @@ class Viewer(QtWidgets.QWidget):
         if self.exp is None:
             return
         self.tabs.setCurrentIndex(0)
+        if self.hasdisplayedLEEMdata:
+            # clear old data
+            self.LEEMimageplotwidget.clear()
         if self.exp.data_type.lower() == 'raw':
             try:
                 # use settings from self.sexp
@@ -757,6 +760,7 @@ class Viewer(QtWidgets.QWidget):
         if self.hasdisplayedLEEDdata:
             # self.LEEDimageplotwidget.getPlotItem().clear()
             self.LEEDivplotwidget.getPlotItem().clear()
+            self.LEEDimagewidget.clear()
         if self.exp.data_type.lower() == 'raw':
             try:
                 # use settings from self.exp
