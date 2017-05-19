@@ -194,7 +194,7 @@ class MainWindow(QtWidgets.QMainWindow):
         LEEDMenu.addAction(self.averageIVAction)
 
         self.autoBackground = QtWidgets.QAction("Auto Background Selection", self)
-        self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection)
+        self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection2)
         LEEDMenu.addAction(self.autoBackground)
 
         self.undoSelection = QtWidgets.QAction("Undo Selection", self)
@@ -1832,6 +1832,69 @@ class Viewer(QtWidgets.QWidget):
 
             self.LEEDBackgroundrects.append((leftbottom_box_item, leftbottom_box, pen, r2))
             self.LEEDBackgroundcenters.append(leftbottom_center)
+
+    def LEEDAutoBackgroundSelection2(self):
+        """Rewrite using circular generation of points."""
+        if (not self.hasdisplayedLEEDdata or
+                not self.LEEDrects or
+                not self.LEEDclickpos):
+            return
+
+        # Background Selection Automation Config Settings
+
+        buf = 10  # set small pixel buffer around User rect so that background boxes don't overlap user selection.
+
+        # side length of beam box = beam_to_background_ratio * side length of background box (see for loop)
+        beam_to_background_ratio = 3
+
+        self.LEEDBackgroundrects = []
+        self.LEEDBackgroundcenters = []
+        phi0 = np.pi/2  # start with first box aligned on the y axis.
+        angles = [phi0 + k*np.pi/3 for k in range(6)]
+
+        for idx, item in enumerate(self.LEEDrects):
+            rect = item[1]
+            size = 2*item[3]
+            if size % 2 != 0:
+                size += 1
+            if size < 10:
+                print("Warning: One or more Beam Selection boxes is smaller than 10 x 10.")
+                print("Use larger selection box in order to make use of automated background selection.")
+                return
+            r1 = int(size / 2)
+
+            backgroundsize = size // beam_to_background_ratio
+            print("Selection size: {0}, Background size: {1}".format(size, backgroundsize))
+            r2 = int(backgroundsize / 2)
+
+            # gap = int((size - 2*backgroundsize) / gap_size_ratio)
+
+            x0 = int(rect.center().x())  # scene coordinates
+            y0 = int(rect.center().y())  # scene coordinates
+            xa = self.LEEDclickpos[idx][0]  # array coordinates
+            ya = self.LEEDclickpos[idx][1]  # array cooridnates
+
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            pen.setBrush(QtCore.Qt.white)
+
+            radius_to_center = r1 + buf + r2
+
+            points = [(x0 + radius_to_center*np.cos(phi), y0 + radius_to_center*np.sin(phi)) for phi in angles]
+
+            centers = [(int(xa + radius_to_center*np.cos(phi)),
+                        int(ya + radius_to_center*np.sin(phi))) for phi in angles]  # array coordinates
+
+            tlcs = [QtCore.QPointF(pt[0] - r2, pt[1] - r2) for pt in points]
+
+            background_rects = [QtCore.QRectF(corner,
+                                              QtCore.QSizeF(backgroundsize, backgroundsize)) for corner in tlcs]
+
+            for idx, rect in enumerate(background_rects):
+                rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
+                self.LEEDBackgroundrects.append((rectitem, background_rects[idx], pen, r2))
+                self.LEEDBackgroundcenters.append(centers[idx])
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
