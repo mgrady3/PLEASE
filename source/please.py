@@ -662,8 +662,7 @@ class Viewer(QtWidgets.QWidget):
         yamlFilter = "YAML (*.yaml);;YML (*.yml);;All Files (*)"
         homeDir = os.getenv("HOME")
         caption = "Select YAML Experiment Config File"
-        fileName = QtGui.QFileDialog.getOpenFileName(parent=None,
-                                                     caption=caption,
+        fileName = QtGui.QFileDialog.getOpenFileName(self, caption,
                                                      directory=homeDir,
                                                      filter=yamlFilter)
         if isinstance(fileName, str):
