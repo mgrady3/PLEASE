@@ -53,6 +53,16 @@ For detailed instructions on how to install and run PLEASE, see the file [INSTAL
 ## Usage
 For instructions on usage for LEEM and LEED data sets, see the file [USAGE.md](USAGE.md) contained within this source repository.
 
+## Known Bugs
+PLEASE is a cross-platform software package and should function identically on most operating systems for nearly all of its functionality. However, there are occasional quirks causing slight differences between operating systems. Here is a list of some of the known bugs:
+
+
+    - OS X
+
+        * Menu Bar may become inactive on startup. Known issue with GUI applications on OS X that are not bundled into an application package (.app file) and are thus missing the "info.plist" configuration file. A work around is included to swap application focus on launch via a call to an applescript included in the source code - cmd.scpt
+
+        * Open File Dialog has no title. Known issue with OS X versions >= than El Capitan. The title bar was intentionally removed for open file and directory chooser dialogs.
+
  ## Contributing
 
  PLEASE was written and developed as a project for my doctoral research. As such, I am the only developer on the project. However, I welcome any and all contributions to this software package. I have included the main features which were relevant to my research, however, there will likely be more that I have missed. With each new experiment I became involved in, the software grew accordingly. However, I have been the primary tester for the software. I welcome others to try the software and provide feedback.
