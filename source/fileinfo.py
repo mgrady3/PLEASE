@@ -22,6 +22,7 @@ class FileInfoWidget(QtWidgets.QWidget):
     """
 
     settings = QtCore.pyqtSignal(object)  # will emit a python dict object
+    output_success = QtCore.pyqtSignal(bool)  # indicate user settings successfu, no cancel/close
     # finished = QtCore.pyqtSignal()
 
     def __init__(self):
@@ -97,6 +98,7 @@ class FileInfoWidget(QtWidgets.QWidget):
         self.user_settings = self.validateSettings()
         if self.user_settings is not None:
             self.settings.emit(self.user_settings)
+            self.output_success.emit(True)
             self.close()
         else:
             print("Error in User Settings. Please enter valid input.")

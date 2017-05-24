@@ -658,12 +658,22 @@ class Viewer(QtWidgets.QWidget):
         else:
             print("Failed to write YAML file.")
 
+    def getUserFileSettings(self):
+        info_window = FileInfoWidget()
+        info_window.settings.connect(self.receiveUserFileInfoSettings)
+        info_window.output_success.connect(self.fileInfoSettingSuccess)
+
+    def fileInfoSettingSuccess(self):
+        self.user_settings_success = True
+
     def parseDatFiles(self):
         """Parse .dat files, strip header, and write raw image data to file.
 
         Query User for image size (height, width) and bits per pixel.
         """
         self.user_settings = None
+        self.user_settings_success = False
+        self.getUserFileSettings()
         info_window = FileInfoWidget()
         info_window.settings.connect(self.receiveUserFileInfoSettings)
 

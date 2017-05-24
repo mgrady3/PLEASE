@@ -16,10 +16,16 @@ import numpy as np
 from PIL import Image
 from PyQt5 import QtCore
 
-# deprecated
-DEF_IMHEIGHT = 600
-DEF_IMWIDTH = 592
-DEF_IMHEAD = 520
+
+class InvalidParameterError(Exception):
+    """Raised when calling process_LEEM_Data() with invalid ht/wd."""
+
+    def __init__(self, message=None):
+        """."""
+        if message is None:
+            message = "Error: process_LEEM_Data() was called with invalid parameters."
+            message += "Height and Width are required parameters."
+        super(InvalidParameterError, self).__init__(message)
 
 
 class ParseError(Exception):
@@ -97,7 +103,7 @@ def getRectCorners(pt1, pt2):
         return None
 
 
-def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte=None):
+def process_LEEM_Data(dirname, ht=None, wd=None, bits=None, byte=None):
     """Read in .dat files, convert to numpy arrays, then stack into 3D numpy array and return.
 
     :argument dirname: string path to current data directory
@@ -119,16 +125,13 @@ def process_LEEM_Data(dirname, ht=0, wd=0, bits=None, byte=None):
     bitsize = bits
     byteorder = byte
     if byte is None:
-        byteorder = 'L'
+        byteorder = 'L'  # default to little endian
+    if ht is None or wd is None:
+        raise InvalidParameterError
     for fl in files:
         with open(os.path.join(dirname, fl), 'rb') as f:
-            # dynamically calculate file header length
-            if ht == 0 and wd == 0:
-                hdln = DEF_IMHEAD
-                ht = DEF_IMHEIGHT
-                wd = DEF_IMWIDTH
-            else:
-                hdln = len(f.read()) - (int(bits/8)*ht*wd)  # multiply by number of bytes per pixel
+
+            hdln = len(f.read()) - (int(bits/8) * ht * wd)  # multiply by number of bytes per pixel
 
             if flag:
                 print('Calculated Header Length of First File: {}'.format(hdln))
