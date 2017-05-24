@@ -262,6 +262,10 @@ class WorkerThread(QtCore.QThread):
             print("Ensure that the path setting points to the correct directory.")
             return
 
+        except LF.InvalidParameterError as e:
+            print(e.message)
+            return
+
         if dat_3d is None:
             self.quit()
             self.exit()
