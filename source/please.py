@@ -16,6 +16,7 @@ semiconductors to metals in bulk or thin film as well as single layer 2D materia
 """
 
 # Stdlib and Scientific Stack imports
+import glob
 import os
 import sys
 import yaml
@@ -29,6 +30,7 @@ from bline import bline
 from colors import Palette
 from data import LeedData, LeemData
 from experiment import Experiment
+from fileinfo import FileInfoWidget
 from qthreads import WorkerThread
 from terminal import MessageConsole
 from yamloutput import ExperimentYAMLOutput
@@ -311,6 +313,8 @@ class Viewer(QtWidgets.QWidget):
         self.labelStyle = {'color': '#FFFFFF',
                            'font-size': '16pt'}
         self.boxrad = 20
+
+        self.user_settings = None  # used for parsing .dat files
 
     def initLEEMTab(self):
         """Setup Layout of LEEM Tab."""
@@ -653,6 +657,55 @@ class Viewer(QtWidgets.QWidget):
             print("Experiment configuration file successfully output.")
         else:
             print("Failed to write YAML file.")
+
+    def parseDatFiles(self):
+        """Parse .dat files, strip header, and write raw image data to file.
+
+        Query User for image size (height, width) and bits per pixel.
+        """
+        self.user_settings = None
+        info_window = FileInfoWidget()
+        info_window.settings.connect(self.receiveUserFileInfoSettings)
+
+        title = "Select directory containing .dat files."
+        data_dir = QtWidgets.QFileDialog.getExistingDirectory(self, caption=title)
+        if isinstance(data_dir, tuple):
+            try:
+                data_dir = data_dir[0]  # PyQt5: getExistingDirectory() outputs tuple
+            except IndexError:
+                print("Error getting data directory.")
+                return
+        data_dir = str(data_dir)  # cast from QString to str
+        if not data_dir:
+            # User clicked Cancel
+            return
+        files = glob.glob(os.path.join(data_dir, '*.dat'))
+        if not files:
+            print("Error: No .dat files found in {}.".format(data_dir))
+            return
+        else:
+            print("Found {} files to process.".format(len(files)))
+
+        if self.user_settings is None:
+            # If user closed FileInfoWidget without entering settings
+            # then self.user_settings will still be None
+            print("No settings received from FileInfoWidget.")
+            return
+        height = self.user_settings['height']
+        width = self.user_settings['width']
+        bit_size = self.user_settings['bit size']
+        image_size = height * width * bit_size
+
+        outputdir = os.path.join(data_dir, 'raw')
+        if not os.path.exists(outputdir):
+            os.mkdir(outputdir)
+
+    @QtCore.pyqtSlot(object)
+    def receiveUserFileInfoSettings(self, settings):
+        if settings:
+            self.user_settings = settings
+        else:
+            print("Error: Received empty settings from FileInfoWidget.")
 
     def load_experiment(self):
         """Query User for YAML config file to load experiment settings.
