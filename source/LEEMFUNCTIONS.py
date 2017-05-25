@@ -16,11 +16,15 @@ import numpy as np
 from PIL import Image
 from PyQt5 import QtCore
 
+# Begin testing static typing with mypy
+from typing import List, Optional, Union
+
 
 class InvalidParameterError(Exception):
     """Indicate that required parameters for parsing data files are not present."""
 
-    def __init__(self, message=None):
+    def __init__(self, message: Optional[str] =None) -> None:
+        """."""
         if message is None:
             message = "Error: Invalid or Insufficient Parameters required to process data files."
         super(InvalidParameterError, self).__init__(message)
@@ -29,7 +33,7 @@ class InvalidParameterError(Exception):
 class ParseError(Exception):
     """Custom exception for errors encountered while parsing TIFF file headers."""
 
-    def __init__(self, message, errors):
+    def __init__(self, message: str, errors):
         """."""
         super(ParseError, self).__init__(message)
         # TODO: implement this later ...
@@ -37,7 +41,7 @@ class ParseError(Exception):
         self.message = message
 
 
-def filenumber_to_energy(el, im):
+def filenumber_to_energy(el: List, im: int) -> float:
     """Convert filenumber to energy in eV.
 
     :argument el: list of energy values in eV in single decimal format
@@ -53,7 +57,7 @@ def filenumber_to_energy(el, im):
         return 0
 
 
-def energy_to_filenumber(el, val):
+def energy_to_filenumber(el: List, val: float) -> int:
     """Convert energy value in eV to image file number.
 
     :argument el: list of energy values in eV in single decimal format
@@ -67,7 +71,8 @@ def energy_to_filenumber(el, val):
         return None
 
 
-def getRectCorners(pt1, pt2):
+def getRectCorners(pt1: Union[tuple, QtCore.QPointF],
+                   pt2: Union[tuple, QtCore.QPointF]) -> Optional[tuple]:
     """Get coordinates of top left and bottom right corners given any two corners of a rectangle."""
     if not isinstance(pt1, (QtCore.QPointF, tuple)) or not isinstance(pt2, (QtCore.QPointF, tuple)):
         print("Error: pt1 and pt2 must be both either tuples or QPointF objects")
@@ -101,7 +106,11 @@ def getRectCorners(pt1, pt2):
         return None
 
 
-def process_LEEM_Data(dirname, ht=None, wd=None, bits=None, byte=None):
+def process_LEEM_Data(dirname: str,
+                      ht: Optional[int] =None,
+                      wd: Optional[int] =None,
+                      bits: Optional[int] =None,
+                      byte: Optional[str] =None):
     """Read in .dat files, convert to numpy arrays, then stack into 3D numpy array and return.
 
     :argument dirname: string path to current data directory
