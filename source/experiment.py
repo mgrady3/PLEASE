@@ -26,7 +26,7 @@ class Experiment(object):
     def __init__(self):
         """Initialize empty container object."""
         self._Test = False
-        self.exists = True
+
         self.exp_type = ''
         self.name = ''
         self.path = ''
@@ -47,7 +47,7 @@ class Experiment(object):
     def toFile(settings):
         """Write experiment settings to a YAML config file.
 
-        To Be Implemented later.
+        Note: This should only be called from a separate QThread from the main UI.
         :return: None
         """
         name = settings['File Name']
