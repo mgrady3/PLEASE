@@ -12,9 +12,10 @@ information given that we are only interested in displaying the image.
 The relevant bits required to display the image are Height, Width, BitsPerPixel.
 
 UKSoft2001 UView Dat File Header Format:
-  Fileheader  (104 bytes)
-  Imageheader (48 bytes)
-  Data (width x height x 2 bytes)
+
+  Fileheader  ~ (104 bytes)
+  Imageheader ~ (48 bytes)
+  Data (width x height x BitsPerPixel * (1 byte / 8 bits))
 
  struct UKFileHeader{    size of(UKFileHeader):104
     20 char id[20];
@@ -68,25 +69,30 @@ import struct
 
 
 class UViewParser(object):
-    """
-    """
+    """Rudimentary parser for Elmitec UView .dat files."""
+
     def __init__(self, path):
-        """
-        """
+        """."""
         self.path = path
 
     def getFiles(self):
-        """
-        """
+        """Get list of .dat files from the provided path."""
         self.files = glob.glob(os.path.join(self.path, "*.dat"))
 
     def parseFiles(self):
-        """
+        """Attempt to read BitsPerPixel, Width, and Height from file heeaders.
+
+        Return: None if fail to parse any file header else
+                List of tuples [(BitsPerPixel, Width, Height), ...]
         """
         if not self.files:
             print("Error: No .dat files found in {}".format(self.path))
+            print("Checking if {} is a valid path ...".format(self.path))
+            print(os.path.exists(self.path))
             return None
         self.headerInfo = []
+        # Try to parse data from headers of each file
+        # Return None if any file fails
         for fl in self.files:
             with open(fl, 'rb') as f:
                 # grab the first 100 bytes from each file

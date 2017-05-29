@@ -21,6 +21,7 @@ class InvalidParameterError(Exception):
     """Indicate that required parameters for parsing data files are not present."""
 
     def __init__(self, message=None):
+        """."""
         if message is None:
             message = "Error: Invalid or Insufficient Parameters required to process data files."
         super(InvalidParameterError, self).__init__(message)
