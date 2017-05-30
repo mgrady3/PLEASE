@@ -55,3 +55,4 @@ class LeemData(object):
         # Coordinates for I(V) data
         self.curX = 0
         self.curY = 0
+        self.timelist = []  # used for plotting I(t) data
