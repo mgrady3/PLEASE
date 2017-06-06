@@ -22,6 +22,7 @@ import yaml
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtCore, QtGui, QtWidgets
+from scipy.ndimage.filters import gaussian_filter
 
 # local project imports
 import LEEMFUNCTIONS as LF
@@ -939,8 +940,8 @@ class Viewer(QtWidgets.QWidget):
                         rad = int(self.LEEDrects[beam_idx][3])
                         x = int(tup[0])
                         y = int(tup[1])
-                        int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
-                                                        x - rad:x + rad + 1, :]
+                        int_window = self.leeddat.dat3d[y - rad:y + rad,
+                                                        x - rad:x + rad, :]
                         # get average intensity per window
                         ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
                         if self.smoothLEEDoutput:
@@ -960,8 +961,8 @@ class Viewer(QtWidgets.QWidget):
                             rad = int(self.LEEDBackgroundrects[idx][3])
                             x = int(tup[0])
                             y = int(tup[1])
-                            int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
-                                                            x - rad:x + rad + 1, :]
+                            int_window = self.leeddat.dat3d[y - rad:y + rad,
+                                                            x - rad:x + rad, :]
                             # get average intensity per window
                             ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
                             if self.smoothLEEDoutput:
@@ -982,8 +983,8 @@ class Viewer(QtWidgets.QWidget):
                         rad = int(self.LEEDrects[idx][3])
                         x = int(tup[0])
                         y = int(tup[1])
-                        int_window = self.leeddat.dat3d[y - rad:y + rad + 1,
-                                                        x - rad:x + rad + 1, :]
+                        int_window = self.leeddat.dat3d[y - rad:y + rad,
+                                                        x - rad:x + rad, :]
                         # get average intensity per window
                         ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
                         if self.smoothLEEDoutput:
@@ -1373,8 +1374,8 @@ class Viewer(QtWidgets.QWidget):
             # print("Topleft: {}".format(topleft))
             # print("Bottomright: {}".format(bottomright))
             print("Window Selected: X={0}, Y={1}, Width={2}, Height={3}".format(xtl, ytl, width, height))
-            window = self.leemdat.dat3d[ytl:ytl + height + 1,
-                                        xtl:xtl + width + 1, :]
+            window = self.leemdat.dat3d[ytl:ytl + height,
+                                        xtl:xtl + width, :]
             ilist = [img.sum()/(width*height) for img in np.rollaxis(window, 2)]
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
@@ -1867,17 +1868,59 @@ class Viewer(QtWidgets.QWidget):
             xtl = xc - rad
             ytl = yc - rad
 
-            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
-                                            xtl:xtl + 2*rad + 1, :]
-            # store average intensity per window
-            ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
-            # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
+            # initial location of rect corner before recentering
+            xtl_i = xtl
+            ytl_i = ytl
+
+            # initial center before shift:
+            xc_i = xc
+            yc_i = yc
+
+            shift_thresh = 10  # discard shifts from one img to the next if the center moves more than this value
+            ilist = []
+            for img_idx in range(self.leeddat.dat3d.shape[2]):
+                print("Starting center: x={0}, y={1}".format(xc_i, yc_i))
+                img = self.leeddat.dat3d[ytl_i:ytl_i + 2*rad,
+                                         xtl_i:xtl_i + 2*rad, img_idx]
+                # apply gaussian blur and then get location of maximum pixel
+                blur = gaussian_filter(img, sigma=5)
+
+                ym, xm = np.unravel_index(blur.argmax(), blur.shape)
+                # xm, ym are relative to the top left corner of the slice, img,  being (0,0)
+                # here we shift them to to be realtive to the top left corner of the full image
+                xm += xtl_i
+                ym += ytl_i
+                print("Beam Max: x={0}, y={1}".format(xm, ym))
+                shift_distance = ((xm - xc_i)**2 + (ym - yc_i)**2)**0.5
+                print("Total shift distance: {}".format(shift_distance))
+
+                if img_idx != 0:
+                    if shift_distance <= shift_thresh:
+                        # set max location as new center
+                        xc_i = xm
+                        yc_i = ym
+                        xtl_i = xc_i - rad
+                        ytl_i = yc_i - rad
+                else:
+                    # don't check for thresh on first image, User may have not clicked close to beam center
+                    xc_i = xm
+                    yc_i = ym
+                    xtl_i = xc_i - rad
+                    ytl_i = yc_i - rad
+
+                # get img slice centered on beam maximum
+                img = self.leeddat.dat3d[ytl_i:ytl_i + 2*rad,
+                                         xtl_i:xtl_i + 2*rad, img_idx]
+                # store average intensity per window
+                ilist.append(img.sum()/(2*rad*2*rad))
+
             if self.smoothLEEDplot:
                 ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
             # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
             self.LEEDivplotwidget.plot(self.leeddat.elist,
                                        ilist,
                                        pen=pg.mkPen(self.LEEDrects[idx][2].color(), width=4))
+
             if self.LEEDBackgroundrects:
                 for idx, tup in enumerate(self.LEEDBackgroundcenters):
                     # center coordinates
@@ -1891,10 +1934,10 @@ class Viewer(QtWidgets.QWidget):
                     xtl = xc - rad
                     ytl = yc - rad
 
-                    int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
-                                                    xtl:xtl + 2*rad + 1, :]
+                    int_window = self.leeddat.dat3d[ytl:ytl + 2*rad,
+                                                    xtl:xtl + 2*rad, :]
                     # store average intensity per window
-                    ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
+                    ilist = [bkgnd_img.sum()/(2*rad*2*rad) for bkgnd_img in np.rollaxis(int_window, 2)]
                     # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
                     if self.smoothLEEDplot:
                         ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
@@ -1925,8 +1968,8 @@ class Viewer(QtWidgets.QWidget):
             # top left corner in array coordinates
             xtl = int(xc - rad)
             ytl = int(yc - rad)
-            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad + 1,
-                                            xtl:xtl + 2*rad + 1, :]
+            int_window = self.leeddat.dat3d[ytl:ytl + 2*rad,
+                                            xtl:xtl + 2*rad, :]
             # store average intensity per window
             ilist = [img.sum()/(2*rad*2*rad) for img in np.rollaxis(int_window, 2)]
             # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
