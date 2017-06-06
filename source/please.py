@@ -1851,8 +1851,10 @@ class Viewer(QtWidgets.QWidget):
         if not self.hasdisplayedLEEDdata or not self.LEEDrects or not self.LEEDclickpos:
             return
         if len(self.LEEDrects) != len(self.LEEDclickpos):
-            print("Error: Number of LEED widnows does not match number of stored click positions")
+            print("Error: Number of LEED windows does not match number of stored click positions")
             return
+
+        # loop over user slections
         for idx, tup in enumerate(self.LEEDclickpos):
             # center coordinates
             xc = tup[0]
