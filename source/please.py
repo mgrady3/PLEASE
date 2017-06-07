@@ -1850,7 +1850,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDBackgroundrects = []
         self.LEEDBackgroundcenters = []
         phi0 = np.pi/2  # start with first box aligned on the y axis.
-        angles = [phi0 + k*np.pi/3 for k in range(6)]
+        angles = [phi0 + k*np.pi/3 for k in range(6)]  # separate boxes by 60 degrees equally spaced on a circle
 
         for idx, item in enumerate(self.LEEDrects):
             rect = item[1]
