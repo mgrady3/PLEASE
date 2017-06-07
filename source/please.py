@@ -1855,96 +1855,82 @@ class Viewer(QtWidgets.QWidget):
             print("Error: Number of LEED windows does not match number of stored click positions")
             return
 
-        # loop over user slections
-        for idx, tup in enumerate(self.LEEDclickpos):
-            # center coordinates
-            xc = tup[0]
-            yc = tup[1]
+        if not self.LEEDBackgroundrects:
+            # process just LEED-IV selection, not automated background selections
 
-            # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
-            rad = int(self.LEEDrects[idx][3])  # cast to int to ensure array indexing uses ints
+            # loop over user slections
+            for idx, tup in enumerate(self.LEEDclickpos):
+                # center coordinates
+                xc = tup[0]
+                yc = tup[1]
 
-            # top left corner in array coordinates
-            xtl = xc - rad
-            ytl = yc - rad
+                # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
+                rad = int(self.LEEDrects[idx][3])  # cast to int to ensure array indexing uses ints
 
-            # initial location of rect corner before recentering
-            xtl_i = xtl
-            ytl_i = ytl
+                # top left corner in array coordinates
+                xtl = xc - rad
+                ytl = yc - rad
 
-            # initial center before shift:
-            xc_i = xc
-            yc_i = yc
+                # initial location of rect corner before recentering
+                xtl_i = xtl
+                ytl_i = ytl
 
-            shift_thresh = 10  # discard shifts from one img to the next if the center moves more than this value
-            ilist = []
-            for img_idx in range(self.leeddat.dat3d.shape[2]):
-                print("Starting center: x={0}, y={1}".format(xc_i, yc_i))
-                img = self.leeddat.dat3d[ytl_i:ytl_i + 2*rad,
-                                         xtl_i:xtl_i + 2*rad, img_idx]
-                # apply gaussian blur and then get location of maximum pixel
-                blur = gaussian_filter(img, sigma=5)
+                # initial center before shift:
+                xc_i = xc
+                yc_i = yc
 
-                ym, xm = np.unravel_index(blur.argmax(), blur.shape)
-                # xm, ym are relative to the top left corner of the slice, img,  being (0,0)
-                # here we shift them to to be realtive to the top left corner of the full image
-                xm += xtl_i
-                ym += ytl_i
-                print("Beam Max: x={0}, y={1}".format(xm, ym))
-                shift_distance = ((xm - xc_i)**2 + (ym - yc_i)**2)**0.5
-                print("Total shift distance: {}".format(shift_distance))
+                shift_thresh = 10  # discard shifts from one img to the next if the center moves more than this value
+                ilist = []
+                for img_idx in range(self.leeddat.dat3d.shape[2]):
+                    # print("Starting center: x={0}, y={1}".format(xc_i, yc_i))
 
-                if img_idx != 0:
-                    if shift_distance <= shift_thresh:
-                        # set max location as new center
+                    img = self.leeddat.dat3d[ytl_i:ytl_i + 2*rad,
+                                             xtl_i:xtl_i + 2*rad, img_idx]
+                    # apply gaussian blur and then get location of maximum pixel
+                    blur = gaussian_filter(img, sigma=5)
+
+                    ym, xm = np.unravel_index(blur.argmax(), blur.shape)
+                    # xm, ym are relative to the top left corner of the slice, img,  being (0,0)
+                    # here we shift them to to be realtive to the top left corner of the full image
+                    xm += xtl_i
+                    ym += ytl_i
+
+                    # print("Beam Max: x={0}, y={1}".format(xm, ym))
+
+                    shift_distance = ((xm - xc_i)**2 + (ym - yc_i)**2)**0.5
+
+                    # print("Total shift distance: {}".format(shift_distance))
+
+                    if img_idx != 0:
+                        if shift_distance <= shift_thresh:
+                            # set max location as new center
+                            xc_i = xm
+                            yc_i = ym
+                            xtl_i = xc_i - rad
+                            ytl_i = yc_i - rad
+                    else:
+                        # don't check for thresh on first image, User may have not clicked close to beam center
                         xc_i = xm
                         yc_i = ym
                         xtl_i = xc_i - rad
                         ytl_i = yc_i - rad
-                else:
-                    # don't check for thresh on first image, User may have not clicked close to beam center
-                    xc_i = xm
-                    yc_i = ym
-                    xtl_i = xc_i - rad
-                    ytl_i = yc_i - rad
 
-                # get img slice centered on beam maximum
-                img = self.leeddat.dat3d[ytl_i:ytl_i + 2*rad,
-                                         xtl_i:xtl_i + 2*rad, img_idx]
-                # store average intensity per window
-                ilist.append(img.sum()/(2*rad*2*rad))
-
-            if self.smoothLEEDplot:
-                ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-            # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
-            self.LEEDivplotwidget.plot(self.leeddat.elist,
-                                       ilist,
-                                       pen=pg.mkPen(self.LEEDrects[idx][2].color(), width=4))
-
-            if self.LEEDBackgroundrects:
-                for idx, tup in enumerate(self.LEEDBackgroundcenters):
-                    # center coordinates
-                    xc = tup[0]
-                    yc = tup[1]
-
-                    # the lengths of LEEDclickpos and LEEDrects are ensured to be equal now
-                    rad = int(self.LEEDBackgroundrects[idx][3])  # cast to int to ensure array indexing uses ints
-
-                    # top left corner in array coordinates
-                    xtl = xc - rad
-                    ytl = yc - rad
-
-                    int_window = self.leeddat.dat3d[ytl:ytl + 2*rad,
-                                                    xtl:xtl + 2*rad, :]
+                    # get img slice centered on beam maximum
+                    img = self.leeddat.dat3d[ytl_i:ytl_i + 2*rad,
+                                             xtl_i:xtl_i + 2*rad, img_idx]
                     # store average intensity per window
-                    ilist = [bkgnd_img.sum()/(2*rad*2*rad) for bkgnd_img in np.rollaxis(int_window, 2)]
-                    # ilist = [img.sum() for img in np.rollaxis(int_window, 2)]
-                    if self.smoothLEEDplot:
-                        ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
-                    # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
-                    self.LEEDivplotwidget.plot(self.leeddat.elist,
-                                               ilist,
-                                               pen=pg.mkPen(self.LEEDBackgroundrects[idx][2].color(), width=4))
+                    ilist.append(img.sum()/(2*rad*2*rad))
+
+                if self.smoothLEEDplot:
+                    ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
+                # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
+                self.LEEDivplotwidget.plot(self.leeddat.elist,
+                                           ilist,
+                                           pen=pg.mkPen(self.LEEDrects[idx][2].color(), width=4))
+
+            else:
+                # process LEED_IV selections and automated background selections
+                pass
 
     def averageLEEDIV(self):
         """Extract IV from current user selections and average the curves."""
