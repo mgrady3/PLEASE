@@ -107,6 +107,7 @@ Continuum Analytics provides two options for using the Anaconda python distribut
 4. Execute the following:
 
     ```shell
+    conda config --add channels conda-forge
     conda install numpy scipy pillow pyqt=5 pyqtgraph>=0.1 pyyaml
     ```
 
