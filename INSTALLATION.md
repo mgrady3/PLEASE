@@ -15,7 +15,7 @@ The PLEASE software package is written in python and depends on a number of thir
 * PyQt >= 5.6.0 ** Note, for Riverbank Computing Ltd. provides two versions of their Qt python bindings, PyQt4 and PyQt5. The PyQt5 APIs are NOT backwards compatible to PyQt4, thus it is imperative to use PyQt5 in order to run PLEASE.
 * Pyyaml >= 3.12.0
 * Pendulum >= 1.1.0
-* Pyqtgraph >= 0.10.0  ** Note, there are a few minor API changes between version 0.9 (provided by Anaconda) and 0.10 (installable via pip). Thus it is imperative to use pyqtgraph version 0.10 or higher.
+* Pyqtgraph >= 0.10.0  ** Note, there are a few minor API changes between version 0.9 and 0.10. Thus it is imperative to use pyqtgraph version 0.10 or higher.
 
 ### Python Version:
 Python versions 2.7 and 3.5+ are supported. All other python versions are not officially supported. The Anaconda Python distribution, provided free of charge by Continuum Analytics, is suggested for ease of use and community support. All python modules required by PLEASE are available via a combination of Anaconda's package manager, conda, and the standard python package manager, pip.
@@ -103,11 +103,11 @@ Continuum Analytics provides two options for using the Anaconda python distribut
     b. pip - the standard python package manager
 
 2. Make sure you have activated the PLEASE environment as shown above.
-3. Numpy, Scipy, Pillow, and Pyyaml will be installed with conda
+3. Numpy, Scipy, Pillow, PyQt, pyqtgraph and Pyyaml will be installed with conda
 4. Execute the following:
 
     ```shell
-    conda install numpy scipy pillow pyyaml
+    conda install numpy scipy pillow pyqt=5 pyqtgraph>=0.1 pyyaml
     ```
 
 5. Type Y and press enter when prompted to install the packages
@@ -115,7 +115,7 @@ Continuum Analytics provides two options for using the Anaconda python distribut
 7. Execute the following:
 
     ```shell
-    pip install pyqt5 pendulum pyqtgraph
+    pip install pendulum 
     ```
 
 8. Type Y and press enter if prompted to continue the installation
