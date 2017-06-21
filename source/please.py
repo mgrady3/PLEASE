@@ -1135,7 +1135,7 @@ class Viewer(QtWidgets.QWidget):
         if self.hasdisplayedLEEMdata:
             self.LEEMimageplotwidget.getPlotItem().clear()
 
-        self.curLEEMIndex = self.leemdat.dat3d.shape[2]//2
+        self.curLEEMIndex = 0
 
         # pyqtgraph displays the array rotated 90 degrees CCW. To force the display to match the original array we
         # display a rotated + flipped array so that the image is displayed correctly
@@ -1184,7 +1184,7 @@ class Viewer(QtWidgets.QWidget):
         if self.leeddat.dat3d is None:
             return
 
-        self.curLEEDIndex = self.leeddat.dat3d.shape[2]//2
+        self.curLEEDIndex = 0
 
         # pyqtgraph displays the array rotated 90 degrees CCW. To force the display to match the original array we
         # display a rotated + flipped array so that the image is displayed correctly
