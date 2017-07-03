@@ -21,6 +21,7 @@ import sys
 import yaml
 import numpy as np
 import pyqtgraph as pg
+from moviepy import editor as mpy
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 # local project imports
