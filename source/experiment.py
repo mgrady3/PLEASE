@@ -108,7 +108,7 @@ class Experiment(object):
             try:
                 self.time = exp_settings["Time Series"]
             except KeyError:
-                self.time = False
+                self.time = False  # default to I(V) data rather than I(t)
             if self.time:
                 try:
                     self.time_step = exp_settings["Time Step"]
