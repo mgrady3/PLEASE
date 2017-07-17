@@ -59,9 +59,9 @@ class Experiment(object):
         time = settings["Time Series"]
         imht = settings['Image Height']
         imwd = settings['Image Width']
-        minE = settings["Minimum Energy"]
-        maxE = settings["Maximum Energy"]
-        stepE = settings["Energy Step Size"]
+        min_energy = settings["Minimum Energy"]
+        max_energy = settings["Maximum Energy"]
+        step_energy = settings["Energy Step Size"]
         bitsize = settings["Bit Depth"]
         byteorder = settings["Byte Order"]
         time_step = settings["Time Step"]
@@ -80,9 +80,9 @@ class Experiment(object):
             f.write(tab + tab + "Height:  " + str(imht) + '\n')  # int
             f.write(tab + tab + "Width:  " + str(imwd) + '\n')  # int
             f.write(tab + "Energy Parameters:" + '\n')
-            f.write(tab + tab + "Min:  " + str(minE) + '\n')  # float
-            f.write(tab + tab + "Max:  " + str(maxE) + '\n')  # float
-            f.write(tab + tab + "Step:  " + str(stepE) + '\n')  # float
+            f.write(tab + tab + "Min:  " + str(min_energy) + '\n')  # float
+            f.write(tab + tab + "Max:  " + str(max_energy) + '\n')  # float
+            f.write(tab + tab + "Step:  " + str(step_energy) + '\n')  # float
             f.write(tab + "Data Path:  " + qt + path + qt + '\n')  # str
             f.write(tab + "Bit Size:  " + str(bitsize) + '\n')  # int
             f.write(tab + "Byte Order:  " + qt + byteorder + qt + '\n')  # str
