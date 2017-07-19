@@ -33,16 +33,26 @@ class TestReadImage(unittest.TestCase):
     dtype_strings = ['uint8', 'uint16', 'uint32', 'uint64']
     imtypes = ['.tif', '.png', '.jpg']
 
+    # Flags for which tests are complete and ready to be used
+    tests_complete = {
+                        "test_read_images": False,
+                        "test_8bit_images": True,
+                        "test_16bitTiff": True
+                     }
+
     def setUp(self):
         """Create test data."""
         self.source_path = os.path.dirname(LF.__file__)
         self.test_data_path = os.path.join(self.source_path, "unittest_data_tmp")
         if not os.path.exists(self.test_data_path):
             os.mkdir(self.test_data_path)
-        combinations = [(dat, im) for dat in self.dtypes for im in self.imtypes]
+        return
+        ###########################################################################
+        # combinations = [(dat, im) for dat in self.dtypes for im in self.imtypes]
 
-        for dtype, imtype in combinations:
-            self.createImage(dtype, imtype)
+        # for dtype, imtype in combinations:
+        #     self.createImage(dtype, imtype)
+        ##########################################################################
 
     def tearDown(self):
         """Remove all temp files from self.test_data_path."""
@@ -73,6 +83,31 @@ class TestReadImage(unittest.TestCase):
             return
         print("Created Image with following paramters {}, {}".format(dtype, imtype))
 
+    @unittest.skipUnless(tests_complete["test_8bit_images"], "Skipping incomplete test")
+    def test_8bit_images(self):
+        """Test LF.read_img with 8bit images."""
+        dtype = self.dtypes[0]
+        for imtype in self.imtypes:
+            self.createImage(dtype, imtype)
+
+        files = glob.glob(os.path.join(self.test_data_path, "*.*"))
+        for fl in files:
+            im = LF.read_img(os.path.join(self.test_data_path, fl))
+            self.assertTrue(im.dtype == dtype)
+
+    @unittest.skipUnless(tests_complete["test_16bitTiff"], "Skipping incomplete test.")
+    @unittest.expectedFailure
+    def test_16bitTiff(self):
+        """Test LF.read_img() with 16bit TIFF."""
+        dtype = self.dtypes[1]
+        self.createImage(dtype, self.imtypes[0])
+        files = glob.glob(os.path.join(self.test_data_path, "*.tif"))
+        for fl in files:
+            im = LF.read_img(os.path.join(self.test_data_path, fl))
+            # NOTE: This should fail since read_img() uses .convert('L') which downscales to 8-bit
+            self.assertTrue(im.dtype == dtype)
+
+    @unittest.skipUnless(tests_complete["test_read_images"], "Skipping incomplete test.")
     def test_read_images(self):
         """Use LF.read_img to read the images created by createImage()."""
         files = glob.glob(os.path.join(self.test_data_path, "*.*"))
