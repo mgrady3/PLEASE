@@ -1720,7 +1720,7 @@ class Viewer(QtWidgets.QWidget):
                                  2*self.boxrad, 2*self.boxrad)
             pen = QtGui.QPen()
             pen.setStyle(QtCore.Qt.SolidLine)
-            pen.setWidth(4)
+            pen.setWidth(6)  # Changed for image clarity - set to 4 or below if too thick
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[self.LEEDclicks - 1])
             rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)  # QGraphicsRectItem
@@ -1925,9 +1925,11 @@ class Viewer(QtWidgets.QWidget):
                     if self.smoothLEEDplot:
                         ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
                     # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
+
+                    # width set to 6 for image clarity; reset to 4 if needed
                     self.LEEDivplotwidget.plot(self.leeddat.elist,
                                                ilist,
-                                               pen=pg.mkPen(self.LEEDBackgroundrects[idx][2].color(), width=4))
+                                               pen=pg.mkPen(self.LEEDBackgroundrects[idx][2].color(), width=6))
 
     def averageLEEDIV(self):
         """Extract IV from current user selections and average the curves."""
