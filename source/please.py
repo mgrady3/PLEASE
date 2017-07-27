@@ -194,7 +194,7 @@ class MainWindow(QtWidgets.QMainWindow):
         LEEDMenu.addAction(self.averageIVAction)
 
         self.autoBackground = QtWidgets.QAction("Auto Background Selection", self)
-        self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection)
+        self.autoBackground.triggered.connect(self.viewer.LEEDAutoBackgroundSelection2)
         LEEDMenu.addAction(self.autoBackground)
 
         self.undoSelection = QtWidgets.QAction("Undo Selection", self)
@@ -287,6 +287,10 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMWindowType = 'flat'
         self.LEEDWindowLen = 4
         self.LEEMWindowLen = 4
+
+        # I(V) plot default values
+        self.LEEM_Linewidth = 4  # default value
+        self.LEED_Linewidth = 4  # default value
 
         self.LEEDAverageIV = []
         self.outputLEEDAverage = False
@@ -509,7 +513,29 @@ class Viewer(QtWidgets.QWidget):
         crosshairHBox.addLayout(crosshairVBox)
         crosshairHBox.addStretch()
         crosshairSettingsGroupBox.setLayout(crosshairHBox)
+
         configTabVBox.addWidget(crosshairSettingsGroupBox)
+        configTabVBox.addWidget(self.h_line())
+
+        LEEM_Linewidth_GroupBox = QtWidgets.QGroupBox()
+        LEEM_Linewidth_HBox = QtWidgets.QHBoxLayout()
+        LEEM_Linewidth_VBox = QtWidgets.QVBoxLayout()
+        LEEM_Linewidth_Label = QtWidgets.QLabel("Enter LEEM I(V) plot linewidth [int]")
+        LEEM_Linewidth_VBox.addWidget(LEEM_Linewidth_Label)
+        self.LEEM_Linewidth_Text = QtWidgets.QLineEdit()
+        self.LEEM_Linewidth_Text.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                               QtWidgets.QSizePolicy.Minimum)
+        LEEM_Linewidth_VBox.addWidget(self.LEEM_Linewidth_Text)
+        LEEM_Linewidth_Button_HBox = QtWidgets.QHBoxLayout()
+        self.LEEM_Linewidth_Button = QtWidgets.QPushButton("Apply Settings", self)
+        self.LEEM_Linewidth_Button.clicked.connect(self.validateLEEMLinewidth)
+        LEEM_Linewidth_Button_HBox.addWidget(self.LEEM_Linewidth_Button)
+        LEEM_Linewidth_VBox.addLayout(LEEM_Linewidth_Button_HBox)
+        LEEM_Linewidth_HBox.addLayout(LEEM_Linewidth_VBox)
+        LEEM_Linewidth_HBox.addStretch()
+        LEEM_Linewidth_GroupBox.setLayout(LEEM_Linewidth_HBox)
+        configTabVBox.addWidget(LEEM_Linewidth_GroupBox)
+        configTabVBox.addWidget(self.h_line())
         configTabVBox.addStretch()
 
         self.ConfigTab.setLayout(configTabVBox)
@@ -625,6 +651,22 @@ class Viewer(QtWidgets.QWidget):
                                                  ignoreBounds=True)
                 self.LEEMimageplotwidget.addItem(self.crosshair.vline,
                                                  ignoreBounds=True)
+
+    def validateLEEMLinewidth(self):
+        """Ensure user input for line width is positive integer."""
+        lw = self.LEEM_Linewidth_Text.text()
+        try:
+            lw = int(lw)
+        except ValueError:
+            print("Error: line width must be entered as an integer > 0.")
+            return
+        if lw <= 0:
+            print("Error: line width must be entered as an integer > 0.")
+            return
+        if lw > 10:
+            print("Warning: Setting plot linewidth > 10 may cause visibility problems. Defaulting to 10.")
+            lw = 10
+        self.LEEM_Linewidth = lw
 
     def createExperimentConfigFile(self):
         """Get User settings and generate a .yaml file."""
@@ -1378,7 +1420,9 @@ class Viewer(QtWidgets.QWidget):
             ilist = [img.sum()/(width*height) for img in np.rollaxis(window, 2)]
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
-            self.LEEMivplotwidget.plot(self.leemdat.elist, ilist, pen=pg.mkPen(tup[2].color(), width=2))
+            self.LEEMivplotwidget.plot(self.leemdat.elist,
+                                       ilist,
+                                       pen=pg.mkPen(tup[2].color(), width=self.LEEM_Linewidth))
 
     def enableLEEMLineProfile(self):
         """Enable fixed energy contrast analysis along a straight line segment.
@@ -1517,7 +1561,7 @@ class Viewer(QtWidgets.QWidget):
                 ilist.append(self.leemdat.dat3d[point[1], point[0], self.curLEEMIndex])
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
-            pen = pg.mkPen(self.qcolors[idx], width=2)
+            pen = pg.mkPen(self.qcolors[idx], width=self.LEEM_Linewidth)
             pdi = pg.PlotDataItem(list(range(len(points))), ilist, pen=pen)
             self.LEEMivplotwidget.addItem(pdi)
             self.LEEMivplotwidget.setLabel('bottom', 'Distance Along Line', units='[arb. units]', **self.labelStyle)
@@ -1584,7 +1628,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMcircs.append(circ)
         self.LEEMselections.append((xmp, ymp))  # (x, y format)
 
-        pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=4)
+        pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=self.LEEM_Linewidth)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
         self.staticLEEMplot.addItem(pdi)
         self.staticLEEMplot.setTitle("LEEM-I(V)")
@@ -1642,7 +1686,7 @@ class Viewer(QtWidgets.QWidget):
             # We want to plot smoothed data and have already calculated it for this pixel position
             ydata = self.leemdat.dat3ds[ymp, xmp, :]
 
-        pen = pg.mkPen(self.qcolors[0], width=4)
+        pen = pg.mkPen(self.qcolors[0], width=self.LEEM_Linewidth)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
         self.LEEMivplotwidget.getPlotItem().clear()
         self.LEEMivplotwidget.getPlotItem().addItem(pdi, clear=True)
@@ -1845,6 +1889,69 @@ class Viewer(QtWidgets.QWidget):
 
             self.LEEDBackgroundrects.append((leftbottom_box_item, leftbottom_box, pen, r2))
             self.LEEDBackgroundcenters.append(leftbottom_center)
+
+    def LEEDAutoBackgroundSelection2(self):
+        """Rewrite using circular generation of points."""
+        if (not self.hasdisplayedLEEDdata or
+                not self.LEEDrects or
+                not self.LEEDclickpos):
+            return
+
+        # Background Selection Automation Config Settings
+
+        buf = 10  # set small pixel buffer around User rect so that background boxes don't overlap user selection.
+
+        # side length of beam box = beam_to_background_ratio * side length of background box (see for loop)
+        beam_to_background_ratio = 3
+
+        self.LEEDBackgroundrects = []
+        self.LEEDBackgroundcenters = []
+        phi0 = np.pi/2  # start with first box aligned on the y axis.
+        angles = [phi0 + k*np.pi/3 for k in range(6)]  # separate boxes by 60 degrees equally spaced on a circle
+
+        for idx, item in enumerate(self.LEEDrects):
+            rect = item[1]
+            size = 2*item[3]
+            if size % 2 != 0:
+                size += 1
+            if size < 10:
+                print("Warning: One or more Beam Selection boxes is smaller than 10 x 10.")
+                print("Use larger selection box in order to make use of automated background selection.")
+                return
+            r1 = int(size / 2)
+
+            backgroundsize = size // beam_to_background_ratio
+            print("Selection size: {0}, Background size: {1}".format(size, backgroundsize))
+            r2 = int(backgroundsize / 2)
+
+            # gap = int((size - 2*backgroundsize) / gap_size_ratio)
+
+            x0 = int(rect.center().x())  # scene coordinates
+            y0 = int(rect.center().y())  # scene coordinates
+            xa = self.LEEDclickpos[idx][0]  # array coordinates
+            ya = self.LEEDclickpos[idx][1]  # array cooridnates
+
+            pen = QtGui.QPen()
+            pen.setStyle(QtCore.Qt.SolidLine)
+            pen.setWidth(4)
+            pen.setBrush(QtCore.Qt.white)
+
+            radius_to_center = r1 + buf + r2
+
+            points = [(x0 + radius_to_center*np.cos(phi), y0 + radius_to_center*np.sin(phi)) for phi in angles]
+
+            centers = [(int(xa + radius_to_center*np.cos(phi)),
+                        int(ya + radius_to_center*np.sin(phi))) for phi in angles]  # array coordinates
+
+            tlcs = [QtCore.QPointF(pt[0] - r2, pt[1] - r2) for pt in points]
+
+            background_rects = [QtCore.QRectF(corner,
+                                              QtCore.QSizeF(backgroundsize, backgroundsize)) for corner in tlcs]
+
+            for idx, rect in enumerate(background_rects):
+                rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)
+                self.LEEDBackgroundrects.append((rectitem, background_rects[idx], pen, r2))
+                self.LEEDBackgroundcenters.append(centers[idx])
 
     def processLEEDIV(self):
         """Plot I(V) from User selections."""
