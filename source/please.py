@@ -1269,6 +1269,8 @@ class Viewer(QtWidgets.QWidget):
 
         Default is single pixel extraction.
         """
+        if self.LEEMRectWindowEnabled:
+            return
         # disable mouse movement tracking
         # reroute mouse click signal to new handle
         try:
@@ -1308,6 +1310,8 @@ class Viewer(QtWidgets.QWidget):
 
         Reinstate default behavior: single pixel extraction.
         """
+        if not self.LEEMRectWindowEnabled:
+            return
         try:
             self.sigmmvLEEM.disconnect()
         except:
