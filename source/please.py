@@ -302,6 +302,9 @@ class Viewer(QtWidgets.QWidget):
         self.exp = None  # overwritten on load with Experiment object
         self.hasdisplayedLEEMdata = False
         self.hasdisplayedLEEDdata = False
+        self.LEEM_tab_is_PEEM = False  # flag to indicate display of PEEM instead of LEEM data
+        self.LEED_tab_active_exp = None
+        self.LEEM_tab_active_exp = None
 
         # flags for plotting reflectivty rathet than intensity
         self.rescaleLEEMIntensity = False
@@ -742,6 +745,8 @@ class Viewer(QtWidgets.QWidget):
             self.load_LEEM_experiment()
         elif self.exp.exp_type == 'LEED':
             self.load_LEED_experiment()
+        elif self.exp.exp_type == 'PEEM':
+            self.load_PEEM_experiment()
         else:
             print("Error: Unrecognized Experiment Type in YAML Config file")
             print("Valid Experiment Types for LiveViewer are LEEM, LEED")
@@ -752,7 +757,11 @@ class Viewer(QtWidgets.QWidget):
         """Load LEEM data from settings described by YAML config file."""
         if self.exp is None:
             return
+        self.LEEM_tab_active_exp = self.exp
         self.tabs.setCurrentIndex(0)
+        if str(self.LEEMimtitle.text) != "LEEM Real Space Image":
+            # reset title if it was changed from PEEM data
+            self.LEEMimtitle.setText("LEEM Real Space Image")
         if self.hasdisplayedLEEMdata:
             # clear old data - This fixes bug witih loading data with different sizes.
             self.LEEMimageplotwidget.clear()
@@ -801,6 +810,7 @@ class Viewer(QtWidgets.QWidget):
         """Load LEED data from settings described by YAML config file."""
         if self.exp is None:
             return
+        self.LEED_tab_active_exp = self.exp
         self.tabs.setCurrentIndex(1)
 
         if self.hasdisplayedLEEDdata:
@@ -848,6 +858,13 @@ class Viewer(QtWidgets.QWidget):
                 print('Required parameters: data path and data extension.')
                 print('Valid data extenstions: \'.tif\', \'.png\', \'.jpg\'')
                 return
+
+    def load_PEEM_experiment(self):
+        """Shim function to load PEEM images as ``LEEM'' data."""
+        self.load_LEEM_experiment()
+        if str(self.LEEMimtitle.text) != "PEEM Real Space Image":
+            # set title to display PEEM data
+            self.LEEMimtitle.setText("PEEM Real Space Image")
 
     def outputIV(self, datatype=None):
         """Output current I(V) plots as tab delimited text files.
