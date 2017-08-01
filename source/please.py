@@ -765,6 +765,12 @@ class Viewer(QtWidgets.QWidget):
         if str(self.LEEMimtitle.text) != "LEEM Real Space Image":
             # reset title if it was changed from PEEM data
             self.LEEMimtitle.setText("LEEM Real Space Image")
+
+        if self.LEEM_tab_active_exp.time:
+            self.LEEMIVTitle.setText("LEEM I(t)")
+        else:
+            self.LEEMIVTitle.setText("LEEM I(V)")
+
         if self.hasdisplayedLEEMdata:
             # clear old data - This fixes bug witih loading data with different sizes.
             self.LEEMimageplotwidget.clear()
@@ -878,6 +884,10 @@ class Viewer(QtWidgets.QWidget):
         if str(self.LEEMimtitle.text) != "PEEM Real Space Image":
             # set title to display PEEM data
             self.LEEMimtitle.setText("PEEM Real Space Image")
+            if self.LEEM_tab_active_exp.time:
+                self.LEEMIVTitle.setText("PEEM I(t)")
+            else:
+                self.LEEMIVTitle.setText("PEEM I(V)")
 
     def outputIV(self, datatype=None):
         """Output current I(V) plots as tab delimited text files.
@@ -1250,12 +1260,21 @@ class Viewer(QtWidgets.QWidget):
         self.hasdisplayedLEEMdata = True
 
         energy = LF.filenumber_to_energy(self.leemdat.elist, self.curLEEMIndex)
+        title = "Real Space {0} Image: {1} {2}"
         if self.currentLEEMTime:
-            title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
+            energy = self.leemdat.timelist[self.curLEEMIndex]
+            unit = "s"
         else:
-            title = "Real Space LEEM Image: {} eV".format(energy)
+            unit = "eV"
 
-        self.LEEMimtitle.setText(title)
+        # if self.currentLEEMTime:
+        #    title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
+        # else:
+        #    title = "Real Space LEEM Image: {} eV".format(energy)
+
+        self.LEEMimtitle.setText(title.format(self.LEEM_tab_active_exp.exp_type,
+                                              energy,
+                                              unit))
         self.LEEMimageplotwidget.setFocus()
 
     @QtCore.pyqtSlot()
@@ -2187,6 +2206,7 @@ class Viewer(QtWidgets.QWidget):
                (self.curLEEMIndex >= minIdx + 1):
                 self.curLEEMIndex -= 1
                 self.showLEEMImage(self.curLEEMIndex)
+                """
                 if self.currentLEEMTime:
                     title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
                 else:
@@ -2194,10 +2214,12 @@ class Viewer(QtWidgets.QWidget):
                     title = "Real Space LEEM Image: {} eV".format(energy)
                 # self.LEEMimageplotwidget.setTitle(title.format(energy))
                 self.LEEMimtitle.setText(title)
+                """
             elif (event.key() == QtCore.Qt.Key_Right) and \
                  (self.curLEEMIndex <= maxIdx - 1):
                 self.curLEEMIndex += 1
                 self.showLEEMImage(self.curLEEMIndex)
+                """
                 if self.currentLEEMTime:
                     title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
                 else:
@@ -2205,6 +2227,17 @@ class Viewer(QtWidgets.QWidget):
                     title = "Real Space LEEM Image: {} eV".format(energy)
                 # self.LEEMimageplotwidget.setTitle(title.format(energy))
                 self.LEEMimtitle.setText(title)
+                """
+            title = "Real Space {0} Image: {1} {2}"
+            energy = LF.filenumber_to_energy(self.leemdat.elist, self.curLEEMIndex)
+            if self.currentLEEMTime:
+                energy = self.leemdat.timelist[self.curLEEMIndex]  # this is a time
+                unit = "s"
+            else:
+                unit = "eV"
+            self.LEEMimtitle.setText(title.format(self.LEEM_tab_active_exp.exp_type,
+                                                  energy,
+                                                  unit))
         # LEED Tab is active
         elif (self.tabs.currentIndex() == 1) and \
              (self.hasdisplayedLEEDdata):
