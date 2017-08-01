@@ -4,11 +4,10 @@ PLEASE - The Python Low-energy Electron Analysis SuitE.
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: April, 2017
+Date: May, 2017
 
 Generic LEEM / LEED experiment object
-Used for serializing experiment data
-This makes it easier to load data from a previously analyzed experiment
+Used for serializing experiment configuration data
 """
 import os
 import yaml
@@ -26,8 +25,9 @@ class Experiment(object):
     def __init__(self):
         """Initialize empty container object."""
         self._Test = False
-        self.exists = True
         self.exp_type = ''
+        self.time = False  # flag for time series data
+        self.time_step = 1.0  # default to 1.0 seconds per image
         self.name = ''
         self.path = ''
         self.data_type = ''
@@ -50,38 +50,43 @@ class Experiment(object):
         To Be Implemented later.
         :return: None
         """
+        # TODO wrap this with try/except KeyError
         name = settings['File Name']
         path = settings['Data Path']
         exptype = settings['Experiment Type']
         datatype = settings['Data Type']
         fileext = settings['File Format']
+        time = settings["Time Series"]
         imht = settings['Image Height']
         imwd = settings['Image Width']
-        minE = settings["Minimum Energy"]
-        maxE = settings["Maximum Energy"]
-        stepE = settings["Energy Step Size"]
+        min_energy = settings["Minimum Energy"]
+        max_energy = settings["Maximum Energy"]
+        step_energy = settings["Energy Step Size"]
         bitsize = settings["Bit Depth"]
         byteorder = settings["Byte Order"]
+        time_step = settings["Time Step"]
 
-        tab = '    '
-        qt = "\""
+        tab = '    '  # YAML uses spaces not tabs (sorry, Richard ...)
+        qt = "\""  # escape for writing the double quote symbol to file to indicate strings
 
         with open(os.path.join(path, name), 'w') as f:
             f.write("Experiment:\n")
-            f.write(tab + "Type:  " + qt + exptype + qt + '\n')
-            f.write(tab + "Name:  " + qt + name + qt + '\n')
-            f.write(tab + "Data Type:  " + qt + datatype + qt + '\n')
-            f.write(tab + "File Format:  " + qt + fileext + qt + '\n')
+            f.write(tab + "Type:  " + qt + exptype + qt + '\n')  # str
+            f.write(tab + "Name:  " + qt + name + qt + '\n')  # str
+            f.write(tab + "Data Type:  " + qt + datatype + qt + '\n')  # str
+            f.write(tab + "File Format:  " + qt + fileext + qt + '\n')  # str
+            f.write(tab + "Time Series:  " + str(time).lower() + '\n')  # bool
             f.write(tab + "Image Parameters:" + '\n')
-            f.write(tab + tab + "Height:  " + str(imht) + '\n')
-            f.write(tab + tab + "Width:  " + str(imwd) + '\n')
+            f.write(tab + tab + "Height:  " + str(imht) + '\n')  # int
+            f.write(tab + tab + "Width:  " + str(imwd) + '\n')  # int
             f.write(tab + "Energy Parameters:" + '\n')
-            f.write(tab + tab + "Min:  " + str(minE) + '\n')
-            f.write(tab + tab + "Max:  " + str(maxE) + '\n')
-            f.write(tab + tab + "Step:  " + str(stepE) + '\n')
-            f.write(tab + "Data Path:  " + qt + path + qt + '\n')
-            f.write(tab + "Bit Size:  " + str(bitsize) + '\n')
-            f.write(tab + "Byte Order:  " + qt + byteorder + qt + '\n')
+            f.write(tab + tab + "Min:  " + str(min_energy) + '\n')  # float
+            f.write(tab + tab + "Max:  " + str(max_energy) + '\n')  # float
+            f.write(tab + tab + "Step:  " + str(step_energy) + '\n')  # float
+            f.write(tab + "Data Path:  " + qt + path + qt + '\n')  # str
+            f.write(tab + "Bit Size:  " + str(bitsize) + '\n')  # int
+            f.write(tab + "Byte Order:  " + qt + byteorder + qt + '\n')  # str
+            f.write(tab + "Time Step:  " + str(time_step) + '\n')  # float
 
     def fromFile(self, fl):
         """
@@ -100,6 +105,15 @@ class Experiment(object):
 
             # Fill Experiment object attributes from loaded settings
             self.exp_type = exp_settings['Type']
+            try:
+                self.time = exp_settings["Time Series"]
+            except KeyError:
+                self.time = False  # default to I(V) data rather than I(t)
+            if self.time:
+                try:
+                    self.time_step = exp_settings["Time Step"]
+                except KeyError:
+                    self.time_step = 1.0  # default to 1.0 seconds per image
             self.name = exp_settings['Name']
             self.path = exp_settings['Data Path']
             self.data_type = exp_settings['Data Type']
@@ -123,6 +137,7 @@ class Experiment(object):
             print("Valid Experiment Parameters are: name, path, type, ext, bits, byteo, mine, maxe, stepe, and numf")
             print("Please refer to experiment.py docstrings for explanation of valid YAML parameter files.")
 
+    # TODO update tests for Time Series flags.
     def test_load(self):
         """Test Loading a pre-made file with hard coded path.
 

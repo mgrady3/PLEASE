@@ -306,6 +306,9 @@ class Viewer(QtWidgets.QWidget):
         self.LEED_tab_active_exp = None
         self.LEEM_tab_active_exp = None
 
+        self.currentLEEMTime = False  # flag for plotting LEEM I(t) instead of I(V)
+        self.currentLEEDTime = False  # flag for plotting LEED I(t) instead of I(V)
+
         # flags for plotting reflectivty rathet than intensity
         self.rescaleLEEMIntensity = False
         self.rescaleLEEDIntensity = False
@@ -765,6 +768,16 @@ class Viewer(QtWidgets.QWidget):
         if self.hasdisplayedLEEMdata:
             # clear old data - This fixes bug witih loading data with different sizes.
             self.LEEMimageplotwidget.clear()
+            self.LEEMivplotwidget.clear()
+        if self.exp.time:
+            # This is an I(t) data set
+            print("Loading data as Time Series")
+            self.LEEMivplotwidget.setLabel('bottom', 'Time', units='s', **self.labelStyle)
+            self.currentLEEMTime = True
+        else:
+            self.LEEMivplotwidget.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
+            self.currentLEEMTime = False
+
         if self.exp.data_type.lower() == 'raw':
             try:
                 # use settings from self.sexp
@@ -1169,7 +1182,16 @@ class Viewer(QtWidgets.QWidget):
         self.leemdat.dat3ds = data.copy()
         self.leemdat.posMask = np.zeros((self.leemdat.dat3d.shape[0],
                                          self.leemdat.dat3d.shape[1]))
-        # print("LEEM data recieved from QThread.")
+        if self.currentLEEMTime:
+            # populate self.leemdat.timelist via settings from self.exp
+            try:
+                time_step = self.exp.time_step
+            except AttributeError:
+                print("Error: No Time Step setting found in loaded experiment settings.")
+                print("Defaulting to 1.0s per image.")
+                time_step = 1.0
+            print("Creating LEEM time series ...")
+            self.leemdat.timelist = [k * time_step for k in range(self.leemdat.dat3d.shape[2])]
         return
 
     @QtCore.pyqtSlot(np.ndarray)
@@ -1226,11 +1248,14 @@ class Viewer(QtWidgets.QWidget):
             self.leemdat.elist.append(round(nextEnergy, 2))
         self.checkDataSize(datatype="LEEM")
         self.hasdisplayedLEEMdata = True
-        title = "Real Space LEEM Image: {} eV"
+
         energy = LF.filenumber_to_energy(self.leemdat.elist, self.curLEEMIndex)
-        # self.LEEMimageplotwidget.setTitle(title.format(energy),
-        #                                  **self.labelStyle)
-        self.LEEMimtitle.setText(title.format(energy))
+        if self.currentLEEMTime:
+            title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
+        else:
+            title = "Real Space LEEM Image: {} eV".format(energy)
+
+        self.LEEMimtitle.setText(title)
         self.LEEMimageplotwidget.setFocus()
 
     @QtCore.pyqtSlot()
@@ -1691,7 +1716,10 @@ class Viewer(QtWidgets.QWidget):
         # print("Mouse moved to: {0}, {1}".format(xmp, ymp))  # array coordinates
 
         # update IV plot
-        xdata = self.leemdat.elist
+        if self.currentLEEMTime:
+            xdata = self.leemdat.timelist
+        else:
+            xdata = self.leemdat.elist
         ydata = self.leemdat.dat3d[ymp, xmp, :]  # raw unsmoothed data
 
         if self.rescaleLEEMIntensity:
@@ -1757,7 +1785,7 @@ class Viewer(QtWidgets.QWidget):
                                  2*self.boxrad, 2*self.boxrad)
             pen = QtGui.QPen()
             pen.setStyle(QtCore.Qt.SolidLine)
-            pen.setWidth(4)
+            pen.setWidth(6)  # Changed for image clarity - set to 4 or below if too thick
             # pen.setBrush(QtCore.Qt.red)
             pen.setColor(self.qcolors[self.LEEDclicks - 1])
             rectitem = self.LEEDimage.scene().addRect(rect, pen=pen)  # QGraphicsRectItem
@@ -2027,9 +2055,11 @@ class Viewer(QtWidgets.QWidget):
                     if self.smoothLEEDplot:
                         ilist = LF.smooth(ilist, window_type=self.LEEDWindowType, window_len=self.LEEDWindowLen)
                     # self.LEEDivplotwidget.plot(self.leeddat.elist, ilist, pen=pg.mkPen(self.qcolors[idx], width=4))
+
+                    # width set to 6 for image clarity; reset to 4 if needed
                     self.LEEDivplotwidget.plot(self.leeddat.elist,
                                                ilist,
-                                               pen=pg.mkPen(self.LEEDBackgroundrects[idx][2].color(), width=4))
+                                               pen=pg.mkPen(self.LEEDBackgroundrects[idx][2].color(), width=6))
 
     def averageLEEDIV(self):
         """Extract IV from current user selections and average the curves."""
@@ -2157,20 +2187,24 @@ class Viewer(QtWidgets.QWidget):
                (self.curLEEMIndex >= minIdx + 1):
                 self.curLEEMIndex -= 1
                 self.showLEEMImage(self.curLEEMIndex)
-                title = "Real Space LEEM Image: {} eV"
-                energy = LF.filenumber_to_energy(self.leemdat.elist,
-                                                 self.curLEEMIndex)
+                if self.currentLEEMTime:
+                    title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
+                else:
+                    energy = LF.filenumber_to_energy(self.leemdat.elist, self.curLEEMIndex)
+                    title = "Real Space LEEM Image: {} eV".format(energy)
                 # self.LEEMimageplotwidget.setTitle(title.format(energy))
-                self.LEEMimtitle.setText(title.format(energy))
+                self.LEEMimtitle.setText(title)
             elif (event.key() == QtCore.Qt.Key_Right) and \
                  (self.curLEEMIndex <= maxIdx - 1):
                 self.curLEEMIndex += 1
                 self.showLEEMImage(self.curLEEMIndex)
-                title = "Real Space LEEM Image: {} eV"
-                energy = LF.filenumber_to_energy(self.leemdat.elist,
-                                                 self.curLEEMIndex)
+                if self.currentLEEMTime:
+                    title = "Real Space LEEM Image: {} s".format(self.leemdat.timelist[self.curLEEMIndex])
+                else:
+                    energy = LF.filenumber_to_energy(self.leemdat.elist, self.curLEEMIndex)
+                    title = "Real Space LEEM Image: {} eV".format(energy)
                 # self.LEEMimageplotwidget.setTitle(title.format(energy))
-                self.LEEMimtitle.setText(title.format(energy))
+                self.LEEMimtitle.setText(title)
         # LEED Tab is active
         elif (self.tabs.currentIndex() == 1) and \
              (self.hasdisplayedLEEDdata):
