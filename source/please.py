@@ -110,7 +110,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # bottom message console
         self.bottomdock = QtWidgets.QDockWidget(self)
-        self.console = MessageConsole()
+        self.console = MessageConsole()  # intercepts messges from sys.stdout
         self.bottomdock.setWidget(self.console)
 
     def setupMenu(self):
@@ -456,7 +456,7 @@ class Viewer(QtWidgets.QWidget):
 
         configTabVBox.addWidget(smooth_group)
         configTabVBox.addWidget(self.h_line())
-
+        """
         # LEED rect  size settings
         RectSettingGroupBox = QtWidgets.QGroupBox()
         LEEDRectSettingHBox = QtWidgets.QHBoxLayout()
@@ -496,11 +496,41 @@ class Viewer(QtWidgets.QWidget):
         LEEDAverageSettingHBox.addLayout(LEEDAverageSettingVBox)
         LEEDAverageSettingHBox.addStretch()
         AverageSettingGroupBox.setLayout(LEEDAverageSettingHBox)
+        """
 
-        configTabVBox.addWidget(self.h_line())
-        configTabVBox.addWidget(AverageSettingGroupBox)
-        configTabVBox.addWidget(self.h_line())
+        # LEED Rect Size and File Output settings
+        LEED_settings_groupbox = QtWidgets.QGroupBox()
+        LEED_settings_hbox = QtWidgets.QHBoxLayout()
 
+        LEED_window_size_vbox = QtWidgets.QVBoxLayout()
+        LEED_file_output_vbox = QtWidgets.QVBoxLayout()
+
+        LEED_rect_setting_label = QtWidgets.QLabel("Enter LEED Window Side Length [even integer]")
+        LEED_window_size_vbox.addWidget(LEED_rect_setting_label)
+        self.LEED_rect_setting_entry = QtWidgets.QLineEdit()
+        self.LEED_rect_setting_entry.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                                   QtWidgets.QSizePolicy.Minimum)
+        LEED_window_size_vbox.addWidget(self.LEED_rect_setting_entry)
+        self.LEED_rect_setting_button = QtWidgets.QPushButton("Apply Window Size", self)
+        self.LEED_rect_setting_button.clicked.connect(self.apply_LEED_window_size)
+        LEED_window_size_vbox.addWidget(self.LEED_rect_setting_button)
+
+        LEED_settings_hbox.addLayout(LEED_window_size_vbox)
+        LEED_settings_hbox.addStretch()
+        LEED_settings_hbox.addWidget(self.v_line())
+        LEED_settings_hbox.addStretch()
+
+        LEED_file_output_label = QtWidgets.QLabel("Enable LEED Average for File Output")
+        LEED_file_output_vbox.addWidget(LEED_file_output_label)
+        self.LEED_file_output_checkbox = QtWidgets.QCheckBox()
+        self.LEED_file_output_checkbox.stateChanged.connect(self.averageStateChanged)
+        LEED_file_output_vbox.addWidget(self.LEED_file_output_checkbox)
+        LEED_settings_hbox.addLayout(LEED_file_output_vbox)
+        LEED_settings_groupbox.setLayout(LEED_settings_hbox)
+
+        configTabVBox.addWidget(LEED_settings_groupbox)
+        configTabVBox.addWidget(self.h_line())
+        """
         # crosshair settings
         crosshairSettingsGroupBox = QtWidgets.QGroupBox()
         crosshairHBox = QtWidgets.QHBoxLayout()
@@ -541,6 +571,40 @@ class Viewer(QtWidgets.QWidget):
         LEEM_Linewidth_HBox.addStretch()
         LEEM_Linewidth_GroupBox.setLayout(LEEM_Linewidth_HBox)
         configTabVBox.addWidget(LEEM_Linewidth_GroupBox)
+        """
+        # Misc LEEM Settings
+        LEEM_settings_groupbox = QtWidgets.QGroupBox()
+        LEEM_settings_hbox = QtWidgets.QHBoxLayout()
+        LEEM_crosshair_vbox = QtWidgets.QVBoxLayout()
+
+        crosshair_label = QtWidgets.QLabel("Enter LEEM crosshair line width [int]")
+        LEEM_crosshair_vbox.addWidget(crosshair_label)
+        self.crosshair_text = QtWidgets.QLineEdit()
+        self.crosshair_text.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                          QtWidgets.QSizePolicy.Minimum)
+        LEEM_crosshair_vbox.addWidget(self.crosshair_text)
+        self.apply_settings_crosshair_button = QtWidgets.QPushButton("Apply Settings", self)
+        self.apply_settings_crosshair_button.clicked.connect(self.validateWidth)
+        LEEM_crosshair_vbox.addWidget(self.apply_settings_crosshair_button)
+        LEEM_settings_hbox.addLayout(LEEM_crosshair_vbox)
+        LEEM_settings_hbox.addStretch()
+        LEEM_settings_hbox.addWidget(self.v_line())
+        LEEM_settings_hbox.addStretch()
+
+        LEEM_plot_settings_vbox = QtWidgets.QVBoxLayout()
+        LEEM_IV_plot_linewidth_label = QtWidgets.QLabel("Enter LEEM I(V) plot linewidth [int]")
+        LEEM_plot_settings_vbox.addWidget(LEEM_IV_plot_linewidth_label)
+        self.LEEM_linewidth_text = QtWidgets.QLineEdit()
+        self.LEEM_linewidth_text.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                               QtWidgets.QSizePolicy.Minimum)
+        LEEM_plot_settings_vbox.addWidget(self.LEEM_linewidth_text)
+        self.LEEM_linewidth_button = QtWidgets.QPushButton("Apply Settings", self)
+        self.LEEM_linewidth_button.clicked.connect(self.validateLEEMLinewidth)
+        LEEM_plot_settings_vbox.addWidget(self.LEEM_linewidth_button)
+        LEEM_settings_hbox.addLayout(LEEM_plot_settings_vbox)
+        LEEM_settings_groupbox.setLayout(LEEM_settings_hbox)
+
+        configTabVBox.addWidget(LEEM_settings_groupbox)
         configTabVBox.addWidget(self.h_line())
         configTabVBox.addStretch()
 
@@ -637,7 +701,7 @@ class Viewer(QtWidgets.QWidget):
 
     def validateWidth(self):
         """Check user input and set crosshair line width."""
-        w = self.crosshairText.text()
+        w = self.crosshair_text.text()
         try:
             w = int(w)
         except ValueError:
@@ -660,7 +724,7 @@ class Viewer(QtWidgets.QWidget):
 
     def validateLEEMLinewidth(self):
         """Ensure user input for line width is positive integer."""
-        lw = self.LEEM_Linewidth_Text.text()
+        lw = self.LEEM_linewidth_text.text()
         try:
             lw = int(lw)
         except ValueError:
@@ -1136,7 +1200,7 @@ class Viewer(QtWidgets.QWidget):
 
     def apply_LEED_window_size(self):
         """Set side length for Rectangular integration window from User input."""
-        userinput = str(self.LEEDRectEntry.text())
+        userinput = str(self.LEED_rect_setting_entry.text())
         try:
             userinput = int(userinput)
         except TypeError:
@@ -1174,7 +1238,7 @@ class Viewer(QtWidgets.QWidget):
     @QtCore.pyqtSlot()
     def averageStateChanged(self):
         """Toggle boolean flag for outputting average LEED IV."""
-        if self.LEEDAverageToggleBox.isChecked():
+        if self.LEED_file_output_checkbox.isChecked():
             self.outputLEEDAverage = True
         else:
             self.outputLEEDAverage = False
