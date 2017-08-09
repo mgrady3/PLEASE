@@ -69,13 +69,18 @@ def arrayToHDF5(path, group_name, dataset_name, data, compression=None):
             print("Error: Invalid Compression type provided when creating HDF5 dataset")
             print("Valid compression types are {}".format(valid_filters))
             return
-            
+
     else:
         print("Error: HDF5 file {0} already contains dataset name {1} in Group {2}".format(path,
                                                                                            dataset_name,
                                                                                            group_name))
         return
     h5file.close()
+
+def HDF5ToArray(path, ):
+    """Create 3D Numpy array from HDF5 file.
+    """
+    pass
 
 
 
