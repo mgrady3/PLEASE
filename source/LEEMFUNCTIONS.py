@@ -22,6 +22,7 @@ class InvalidParameterError(Exception):
     """Indicate that required parameters for parsing data files are not present."""
 
     def __init__(self, message=None):
+        """."""
         if message is None:
             message = "Error: Invalid or Insufficient Parameters required to process data files."
         super(InvalidParameterError, self).__init__(message)
@@ -53,18 +54,18 @@ def arrayToHDF5(path, group_name, dataset_name, data, compression=None):
         # TODO: fill in proper errors
         pass
     print("HDF5 file located at {}".format(path))
-    if not group_name in h5file:
+    if group_name not in h5file:
         group = h5file.create_group(group_name)
     else:
         print("Error: HDF5 file {0} already contains Group {1}".format(path, group_name))
         return
-    if not dataset_name in group.keys():
+    if dataset_name not in group.keys():
         if compression is None:
-            dataset = group.create_dataset(dataset_name, data=data)
+            group.create_dataset(dataset_name, data=data)
         elif compression in valid_filters:
-            dataset = group.create_dataset(dataset_name,
-                                           data=data,
-                                           compression=compression)
+            group.create_dataset(dataset_name,
+                                 data=data,
+                                 compression=compression)
         else:
             print("Error: Invalid Compression type provided when creating HDF5 dataset")
             print("Valid compression types are {}".format(valid_filters))
@@ -77,18 +78,22 @@ def arrayToHDF5(path, group_name, dataset_name, data, compression=None):
         return
     h5file.close()
 
-def HDF5ToArray(path, ):
+
+def HDF5ToArray(path, group_name=None, dataset_name=None):
     """Create 3D Numpy array from HDF5 file.
+
+    :arguement path: string path to HDF5 file to open
+    :arguement group_name: string indicating which group within the HDF5 DB to search for data
+    :arguement dataset_name: string indicating which dataset to load from group_name
     """
     pass
-
 
 
 def filenumber_to_energy(el, im):
     """Convert filenumber to energy in eV.
 
     :argument el: list of energy values in eV in single decimal format
-    :argument im: integer image file number in range 0 to self.LEEM_numfiles
+    :argument im: integer image file number in range 0 to numfiles - 1
     :return el[im]: energy value in single decimal format corresponding to file number im
     """
     try:
