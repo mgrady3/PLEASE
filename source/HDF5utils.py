@@ -4,7 +4,7 @@ PLEASE - The Python Low-energy Electron Analysis SuitE.
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: April, 2017
+Date: August, 2017
 
 HDF5utils.py
 
@@ -131,4 +131,5 @@ def HDF5ToArray(path, group_name="/", dataset_name=None):
     except KeyError:
         print("Error: No dataset named {0} in HDF5 file {1} in Group name {2}.".format(dataset_name, path, group_name))
         return None
+
     return np.array(dataset)
