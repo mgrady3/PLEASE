@@ -12,45 +12,118 @@ Collection of utility methods and classes for working with HDF5 data
 """
 
 import h5py
+import sys
 import numpy as np
-from PyQt import QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class HDF5Viewer(QtWidgets.QWidget):
     """Container for QTreeView populated from HDF5."""
 
+    output_array_signal = QtCore.pyqtSignal(np.ndarray)
+
     def __init__(self, model, parent=None):
         """Init view and set model."""
         super().__init__(parent)
         self.treeview = QtWidgets.QTreeView()
+        self.treeview.setHeaderHidden(True)
         self.model = model
         self.treeview.setModel(model)
+        self.initLayout()
+
+    def initLayout(self):
+        """Setup widget layout."""
         self.layout = QtWidgets.QVBoxLayout()
         self.layout.addWidget(self.treeview)
+
+        self.button_hbox = QtWidgets.QHBoxLayout()
+
+        self.cancel_button = QtWidgets.QPushButton("Cancel", self)
+        self.cancel_button.clicked.connect(self.close)
+        self.select_button = QtWidgets.QPushButton("Select", self)
+        self.select_button.clicked.connect(self.validateSelection)
+
+        self.button_hbox.addWidget(self.cancel_button)
+        self.button_hbox.addStretch()
+        self.button_hbox.addWidget(self.select_button)
+
+        self.layout.addLayout(self.button_hbox)
+
         self.setLayout(self.layout)
+
+    def validateSelection(self):
+        """Confirm that the current USER selection from the TreeView corresponds to an HDF5 Dataset.
+
+        If the selection is valid, pass the selection paramters to HDF5ToArray()
+        This will then provide a Numpy array to be returned for laoding into the main GUI.
+        Adapted from Qt docs Model/View Tutorial "Working with Selections "
+        """
+        path = []
+        current_item_index = self.treeview.selectionModel().currentIndex()
+        # current_text = str(current_item_index.data(QtCore.Qt.DisplayRole))
+        seek_root = QtCore.QModelIndex(current_item_index)
+        path.append(str(seek_root.data(QtCore.Qt.DisplayRole)))
+        heirarchy_level = 1
+
+        # rootnode has QModelIndex() as its parent
+        while seek_root.parent() != QtCore.QModelIndex():
+            seek_root = seek_root.parent()
+            path.append(str(seek_root.data(QtCore.Qt.DisplayRole)))
+            heirarchy_level += 1
+
+        # print("Item {0} found at level {1}.".format(current_text, heirarchy_level))
+        # print("/".join(reversed(path)))
+        user_selected_tree_path = "/".join(reversed(path))
+
+        # check HDF5 file if user selected path is valid
+        valid_selection = self.model.validatePath(user_selected_tree_path)
+        if not valid_selection:
+            print("Error: {0} is not a valid path in HDF5 file {1}".format(user_selected_tree_path,
+                                                                           self.model.hfile_path))
+            return
+        data = HDF5ToArray(hfile_path=self.model.hfile_path,
+                           hdf5_path_to_data=user_selected_tree_path)
+        if isinstance(data, np.ndarray) and data.dtype is not object:
+            self.outputData(data)
+        else:
+            print("Error: Failed to create array from HDF5 dataset; possible incompatibale dtype.")
+            return
+
+    def outputData(self, data):
+        """Output valid np.ndarray to main GUI for visualization."""
+        print("Sending array from HDF5 to main UI.")
+        print("Array attributes: dtype={0}, shape={1}.".format(data.dtype, data.shape))
+        # self.output_array_signal.emit(data)
 
 
 class HDF5TreeModel(QtGui.QStandardItemModel):
     """Model for HDF5 tree heirarchy."""
 
-    def __init__(self, hfile):
+    def __init__(self, hfile_path):
         """Init invisible root; hide headers.
 
         :parameter hfile: string path to HDF5 file
         """
         super().__init__()
         self.toplevel_node = self.invisibleRootItem()  # invisible node
-        self.experiments_node = QtGui.QStandardItem("Experiments")  # first visible root
-        self.toplevel_node.appendRow(self.experiments_node)
+        # self.experiments_node = QtGui.QStandardItem("Experiments")  # first visible root
+        # self.toplevel_node.appendRow(self.experiments_node)
+
         # open HDF5 file as read only
-        self.hfile = h5py.File(hfile, "r")
+        self.hfile_path = hfile_path
+        self.hfile = h5py.File(hfile_path, "r")
         self.populateTreeFromDict()
         self.hfile.close()
+
+    def validatePath(self, path):
+        """Check if a given path is valid in the current HDF5 file structure."""
+        hfile = h5py.File(self.hfile_path, "r")
+        return path in hfile
 
     def populateTreeFromDict(self):
         """Get dict representation of HDF5 tree and populate TreeView."""
         dtree = recursiveHDF5ToDict(self.hfile)
-        recursiveDictToTree(self.experiments_node, dtree)
+        recursiveDictToTree(self.toplevel_node, dtree)
 
 
 def recursiveDictToTree(root, d):
@@ -113,23 +186,42 @@ def arrayToHDF5(path, group_name, dataset_name, data, compression=None):
     h5file.close()
 
 
-def HDF5ToArray(path, group_name="/", dataset_name=None):
+def HDF5ToArray(hfile_path, hdf5_path_to_data=None):
     """Create 3D Numpy array from HDF5 file.
+
     :arguement path: string path to HDF5 file to open
-    :arguement group_name: string indicating which group within the HDF5 DB to search for data
-    :arguement dataset_name: string indicating which dataset to load from group_name
     :return: None if query fails, else numpy array from HDF5 dataset.
     """
-
+    if hdf5_path_to_data is None:
+        print("Error: No data path provided to search HDF5 tree.")
+        return None
     try:
-        hfile = h5py.File(path, "r")
+        hfile = h5py.File(hfile_path, "r")
     except OSError:
         # TODO: fill in proper errors
         pass
     try:
-        dataset = hfile[group_name + "/" + dataset_name]
+        dataset = hfile[hdf5_path_to_data]
     except KeyError:
-        print("Error: No dataset named {0} in HDF5 file {1} in Group name {2}.".format(dataset_name, path, group_name))
+        print("Error: No data located at {0} in HDF5 file{1}.".format(hdf5_path_to_data, hfile_path))
+        return None
+    if isinstance(dataset, h5py._hl.group.Group):
+        print("Error: path to data in HDF5 file selected a Group not a Dataset.")
+        return None
+    elif isinstance(dataset, h5py._hl.dataset.Dataset):
+        return np.array(dataset)
+    else:
         return None
 
-    return np.array(dataset)
+
+def main():
+    """Test."""
+    app = QtWidgets.QApplication(sys.argv)
+    data_model = HDF5TreeModel("./source/Experiments.h5")
+    tv = HDF5Viewer(data_model)
+    tv.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()

@@ -11,7 +11,6 @@ These methods are independent of the GUI and thus not contained in please.py
 
 """
 
-import h5py
 import os
 import numpy as np
 from PIL import Image
@@ -37,56 +36,6 @@ class ParseError(Exception):
         # TODO: implement this later ...
         self.errors = errors
         self.message = message
-
-
-def arrayToHDF5(path, group_name, dataset_name, data, compression=None):
-    """Create HDF5 dataset from 3D Numpy Array.
-
-    :arguement path: string path to location of HDF5 file to create
-    :arguement group_name: HDF5 Group to place data into
-    :arguement dataset_name:
-    :arguement data: 3D numpy array to store in HDF5 format
-    """
-    valid_filters = ["gzip", "lzf", "szip"]
-    try:
-        h5file = h5py.File(path, 'w')
-    except OSError:
-        # TODO: fill in proper errors
-        pass
-    print("HDF5 file located at {}".format(path))
-    if group_name not in h5file:
-        group = h5file.create_group(group_name)
-    else:
-        print("Error: HDF5 file {0} already contains Group {1}".format(path, group_name))
-        return
-    if dataset_name not in group.keys():
-        if compression is None:
-            group.create_dataset(dataset_name, data=data)
-        elif compression in valid_filters:
-            group.create_dataset(dataset_name,
-                                 data=data,
-                                 compression=compression)
-        else:
-            print("Error: Invalid Compression type provided when creating HDF5 dataset")
-            print("Valid compression types are {}".format(valid_filters))
-            return
-
-    else:
-        print("Error: HDF5 file {0} already contains dataset name {1} in Group {2}".format(path,
-                                                                                           dataset_name,
-                                                                                           group_name))
-        return
-    h5file.close()
-
-
-def HDF5ToArray(path, group_name=None, dataset_name=None):
-    """Create 3D Numpy array from HDF5 file.
-
-    :arguement path: string path to HDF5 file to open
-    :arguement group_name: string indicating which group within the HDF5 DB to search for data
-    :arguement dataset_name: string indicating which dataset to load from group_name
-    """
-    pass
 
 
 def filenumber_to_energy(el, im):
