@@ -26,10 +26,12 @@ class HDF5Viewer(QtWidgets.QWidget):
         """Init view and set model."""
         super().__init__(parent)
         self.treeview = QtWidgets.QTreeView()
+        self.treeview.setWindowTitle("HDF5 File Explorer")
         self.treeview.setHeaderHidden(True)
         self.model = model
         self.treeview.setModel(model)
         self.initLayout()
+        self.show()
 
     def initLayout(self):
         """Setup widget layout."""
@@ -91,9 +93,10 @@ class HDF5Viewer(QtWidgets.QWidget):
 
     def outputData(self, data):
         """Output valid np.ndarray to main GUI for visualization."""
-        print("Sending array from HDF5 to main UI.")
-        print("Array attributes: dtype={0}, shape={1}.".format(data.dtype, data.shape))
-        # self.output_array_signal.emit(data)
+        # print("Sending array from HDF5 to main UI.")
+        # print("Array attributes: dtype={0}, shape={1}.".format(data.dtype, data.shape))
+        self.output_array_signal.emit(data)
+        self.close()
 
 
 class HDF5TreeModel(QtGui.QStandardItemModel):

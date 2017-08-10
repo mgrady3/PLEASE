@@ -24,6 +24,7 @@ import pyqtgraph as pg
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 # local project imports
+import HDF5utils as HF
 import LEEMFUNCTIONS as LF
 from bline import bline
 from colors import Palette
@@ -124,6 +125,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createYAMLAction = QtWidgets.QAction("Generate Experiment Config File", self)
         self.createYAMLAction.triggered.connect(self.viewer.createExperimentConfigFile)
         fileMenu.addAction(self.createYAMLAction)
+
+        self.load_from_HDF5_action = QtWidgets.QAction("Load Data from HDF5", self)
+        self.load_from_HDF5_action.triggered.connect(self.viewer.loadDataFromHDF5)
+        fileMenu.addAction(self.load_from_HDF5_action)
 
         self.exitAction = QtWidgets.QAction("Exit", self)
         self.exitAction.setShortcut('Ctrl+Q')
@@ -766,16 +771,47 @@ class Viewer(QtWidgets.QWidget):
         else:
             print("Failed to write YAML file.")
 
+    def loadDataFromHDF5(self):
+        """Select Dataset to load from HDF5 Database."""
+        # Query User for HDF5 Database file to analyze
+        home_dir = os.getenv("HOME")
+        caption = "Select HDF5 Database file"
+        file_path = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                          caption,
+                                                          directory=home_dir)
+        if isinstance(file_path, str):
+            hfile_path = file_path  # string path to .yaml or .yml config file
+        elif isinstance(file_path, tuple):
+            try:
+                hfile_path = file_path[0]
+            except IndexError:
+                print('No HDF5 file found.')
+                print('Please Select a directory with a .h5 or .hdf5 file.')
+                print('Loading Canceled ...')
+                return
+        else:
+            print('No HDF5 file found.')
+            print('Please Select a directory with a .h5 or .hdf5 file.')
+            print('Loading Canceled ...')
+            return
+        if hfile_path == '':
+            print("Loading canceled.")
+            return
+        print("HDF5 file selected: {}".format(hfile_path))
+        data_model = HF.HDF5TreeModel(hfile_path)
+        self.HDF5_explorer = HF.HDF5Viewer(model=data_model)
+        self.HDF5_explorer.output_array_signal.connect(self.retrieveDataFromHDF5)
+
     def load_experiment(self):
         """Query User for YAML config file to load experiment settings.
 
         Adapted from my other project https://www.github.com/mgrady3/pLEASE
         """
         yamlFilter = "YAML (*.yaml);;YML (*.yml);;All Files (*)"
-        homeDir = os.getenv("HOME")
+        home_dir = os.getenv("HOME")
         caption = "Select YAML Experiment Config File"
         fileName = QtGui.QFileDialog.getOpenFileName(self, caption,
-                                                     directory=homeDir,
+                                                     directory=home_dir,
                                                      filter=yamlFilter)
         if isinstance(fileName, str):
             config = fileName  # string path to .yaml or .yml config file
@@ -1248,6 +1284,13 @@ class Viewer(QtWidgets.QWidget):
     def output_complete():
         """Recieved a finished() SIGNAL from a QThread object."""
         print('File output successfully')
+
+    @QtCore.pyqtSlot(np.ndarray)
+    def retrieveDataFromHDF5(self, data):
+        """Grab the numpy array loaded from HDF5 database."""
+        self.array_from_HDF5 = data
+        msg = "Successfully loaded numpy array from HDF5 with attributes: dtype={0}, shape={1}"
+        print(msg.format(data.dtype, data.shape))
 
     @QtCore.pyqtSlot(np.ndarray)
     def retrieve_LEEM_data(self, data):
