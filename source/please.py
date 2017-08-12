@@ -3,7 +3,7 @@
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: May, 2017
+Date: August, 2017
 
 PLEASE provides a convienient Graphical User Interface for exploration and
 analysis of Low Energy Electron Microscopy and Diffraction data sets.
@@ -801,6 +801,7 @@ class Viewer(QtWidgets.QWidget):
         data_model = HF.HDF5TreeModel(hfile_path)
         self.HDF5_explorer = HF.HDF5Viewer(model=data_model)
         self.HDF5_explorer.output_array_signal.connect(self.retrieveDataFromHDF5)
+        self.HDF5_explorer.output_array_attrs_signal.connect(self.retrieveExpSettingsFromHDF5)
 
     def load_experiment(self):
         """Query User for YAML config file to load experiment settings.
@@ -1291,6 +1292,13 @@ class Viewer(QtWidgets.QWidget):
         self.array_from_HDF5 = data
         msg = "Successfully loaded numpy array from HDF5 with attributes: dtype={0}, shape={1}"
         print(msg.format(data.dtype, data.shape))
+
+    @QtCore.pyqtSlot(bytes)
+    def retrieveExpSettingsFromHDF5(self, settings):
+        """Grab the settings attribute data loaded from HDF5 database."""
+        self.array_attrs_from_HDF5 = yaml.load(settings.decode())
+        msg = "Successfully loaded Settings attribute: {} from HDF5."
+        print(msg.format(self.array_attrs_from_HDF5))
 
     @QtCore.pyqtSlot(np.ndarray)
     def retrieve_LEEM_data(self, data):

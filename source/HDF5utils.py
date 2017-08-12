@@ -21,6 +21,7 @@ class HDF5Viewer(QtWidgets.QWidget):
     """Container for QTreeView populated from HDF5."""
 
     output_array_signal = QtCore.pyqtSignal(np.ndarray)
+    output_array_attrs_signal = QtCore.pyqtSignal(bytes)
 
     def __init__(self, model, parent=None):
         """Init view and set model."""
@@ -85,17 +86,26 @@ class HDF5Viewer(QtWidgets.QWidget):
             return
         data = HDF5ToArray(hfile_path=self.model.hfile_path,
                            hdf5_path_to_data=user_selected_tree_path)
+        try:
+            print("Searching for Settings attribute in HDF5 file location {}.".format(user_selected_tree_path))
+            hfile = h5py.File(self.model.hfile_path, "r")
+            data_attrs = hfile[user_selected_tree_path].attrs["Settings"]
+            hfile.close()
+        except KeyError:
+            print("Error: No Settings attribute found in HDF5 dataset.")
+            return
         if isinstance(data, np.ndarray) and data.dtype is not object:
-            self.outputData(data)
+            self.outputData(data, data_attrs)
         else:
             print("Error: Failed to create array from HDF5 dataset; possible incompatibale dtype.")
             return
 
-    def outputData(self, data):
+    def outputData(self, data, data_settings=None):
         """Output valid np.ndarray to main GUI for visualization."""
         # print("Sending array from HDF5 to main UI.")
         # print("Array attributes: dtype={0}, shape={1}.".format(data.dtype, data.shape))
         self.output_array_signal.emit(data)
+        self.output_array_attrs_signal.emit(data_settings)
         self.close()
 
 
