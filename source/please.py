@@ -1293,12 +1293,12 @@ class Viewer(QtWidgets.QWidget):
         msg = "Successfully loaded numpy array from HDF5 with attributes: dtype={0}, shape={1}"
         print(msg.format(data.dtype, data.shape))
 
-    @QtCore.pyqtSlot(bytes)
+    @QtCore.pyqtSlot(object)
     def retrieveExpSettingsFromHDF5(self, settings):
         """Grab the settings attribute data loaded from HDF5 database."""
-        self.array_attrs_from_HDF5 = yaml.load(settings.decode())
+        self.exp_settings_from_HDF5 = settings
         msg = "Successfully loaded Settings attribute: {} from HDF5."
-        print(msg.format(self.array_attrs_from_HDF5))
+        print(msg.format(self.exp_settings_from_HDF5))
 
     @QtCore.pyqtSlot(np.ndarray)
     def retrieve_LEEM_data(self, data):

@@ -19,7 +19,7 @@ class HDF5Viewer(QtWidgets.QWidget):
     """Container for QTreeView populated from HDF5."""
 
     output_array_signal = QtCore.pyqtSignal(np.ndarray)
-    output_array_attrs_signal = QtCore.pyqtSignal(bytes)
+    output_array_attrs_signal = QtCore.pyqtSignal(object)
 
     def __init__(self, model, parent=None):
         """Init view and set model."""
@@ -57,24 +57,21 @@ class HDF5Viewer(QtWidgets.QWidget):
 
         If the selection is valid, pass the selection paramters to HDF5ToArray()
         This will then provide a Numpy array to be returned for laoding into the main GUI.
-        Adapted from Qt docs Model/View Tutorial "Working with Selections "
+        Adapted from Qt docs Model/View Tutorial "Working with Selections"
         """
+        # Recursively climb tree heirarchy and assemble path from root to current node
         path = []
         current_item_index = self.treeview.selectionModel().currentIndex()
-        # current_text = str(current_item_index.data(QtCore.Qt.DisplayRole))
-        seek_root = QtCore.QModelIndex(current_item_index)
-        path.append(str(seek_root.data(QtCore.Qt.DisplayRole)))
-        heirarchy_level = 1
+        current_node = QtCore.QModelIndex(current_item_index)
+        path.append(str(current_node.data(QtCore.Qt.DisplayRole)))
 
-        # rootnode has QModelIndex() as its parent
-        while seek_root.parent() != QtCore.QModelIndex():
-            seek_root = seek_root.parent()
-            path.append(str(seek_root.data(QtCore.Qt.DisplayRole)))
-            heirarchy_level += 1
+        # Note: rootnode has QModelIndex() as its parent
+        while current_node.parent() != QtCore.QModelIndex():
+            current_node = current_node.parent()
+            path.append(str(current_node.data(QtCore.Qt.DisplayRole)))
 
-        # print("Item {0} found at level {1}.".format(current_text, heirarchy_level))
-        # print("/".join(reversed(path)))
-        user_selected_tree_path = "/".join(reversed(path))
+        user_selected_tree_path = "/".join(reversed(path))  # Path from root to selected node
+        print("Selected path to data: {}".format(user_selected_tree_path))
 
         # check HDF5 file if user selected path is valid
         valid_selection = self.model.validatePath(user_selected_tree_path)
@@ -85,15 +82,28 @@ class HDF5Viewer(QtWidgets.QWidget):
         data = HDF5ToArray(hfile_path=self.model.hfile_path,
                            hdf5_path_to_data=user_selected_tree_path)
         try:
-            print("Searching for Settings attribute in HDF5 file location {}.".format(user_selected_tree_path))
+            # Search User selected HDF5 Dataset for experiment configuration attributes
             hfile = h5py.File(self.model.hfile_path, "r")
-            data_attrs = hfile[user_selected_tree_path].attrs["Settings"]
+
+            data_settings = {}
+            data_settings["Time Series"] = hfile[user_selected_tree_path].attrs["Time Series"]
+            if data_settings["Time Series"]:
+                # I(t) data
+                data_settings["Time Step"] = hfile[user_selected_tree_path].attrs["Time Step"]
+            else:
+                # I(V) data
+                # Ensure settings don't carry extra decimal places (np.float64)
+                data_settings["Min Energy"] = round(float(hfile[user_selected_tree_path].attrs["Min Energy"]), 2)
+                data_settings["Max Energy"] = round(float(hfile[user_selected_tree_path].attrs["Max Energy"]), 2)
+                data_settings["Step Energy"] = round(float(hfile[user_selected_tree_path].attrs["Step Energy"]), 2)
             hfile.close()
-        except KeyError:
-            print("Error: No Settings attribute found in HDF5 dataset.")
+        except KeyError as e:
+            print("Error: Invalid key when searching for experiment configuration attributes.")
+            print("Key Error: {0} {1}".format(e.errno, e.strerror))
             return
         if isinstance(data, np.ndarray) and data.dtype is not object:
-            self.outputData(data, data_attrs)
+            print("Outputting HDF5 dataset and settings dict ...")
+            self.outputData(data, data_settings)
         else:
             print("Error: Failed to create array from HDF5 dataset; possible incompatibale dtype.")
             return
