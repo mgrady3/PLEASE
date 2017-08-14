@@ -3,7 +3,7 @@
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: August, 2017
+Date: May, 2017
 
 PLEASE provides a convienient Graphical User Interface for exploration and
 analysis of Low Energy Electron Microscopy and Diffraction data sets.

@@ -5,9 +5,7 @@ Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
 Date: August, 2017
-
 HDF5utils.py
-
 Collection of utility methods and classes for working with HDF5 data
 """
 
