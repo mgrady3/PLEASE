@@ -84,18 +84,14 @@ class HDF5Viewer(QtWidgets.QWidget):
         try:
             # Search User selected HDF5 Dataset for experiment configuration attributes
             hfile = h5py.File(self.model.hfile_path, "r")
-
+            dataset = hfile[user_selected_tree_path]
+            # construct dictionary of experiment settings from HDF5 dataset attributes
             data_settings = {}
-            data_settings["Time Series"] = hfile[user_selected_tree_path].attrs["Time Series"]
-            if data_settings["Time Series"]:
-                # I(t) data
-                data_settings["Time Step"] = hfile[user_selected_tree_path].attrs["Time Step"]
-            else:
-                # I(V) data
-                # Ensure settings don't carry extra decimal places (np.float64)
-                data_settings["Min Energy"] = round(float(hfile[user_selected_tree_path].attrs["Min Energy"]), 2)
-                data_settings["Max Energy"] = round(float(hfile[user_selected_tree_path].attrs["Max Energy"]), 2)
-                data_settings["Step Energy"] = round(float(hfile[user_selected_tree_path].attrs["Step Energy"]), 2)
+            for key in dataset.attrs:
+                if isinstance(dataset.attrs[key], (np.float64, np.float32, np.float16, float)):
+                    data_settings[key] = round(float(dataset.attrs[key]), 2)
+                else:
+                    data_settings[key] = dataset.attrs[key]
             hfile.close()
         except KeyError as e:
             print("Error: Invalid key when searching for experiment configuration attributes.")
