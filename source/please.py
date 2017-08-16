@@ -130,6 +130,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_from_HDF5_action.triggered.connect(self.viewer.loadDataFromHDF5)
         fileMenu.addAction(self.load_from_HDF5_action)
 
+        self.store_data_HDF5_action = QtWidgets.QAction("Store data in HDF5", self)
+        self.store_data_HDF5_action.triggered.connect(self.viewer.storeDataInHDF5)
+        fileMenu.addAction(self.store_data_HDF5_action)
+
         self.exitAction = QtWidgets.QAction("Exit", self)
         self.exitAction.setShortcut('Ctrl+Q')
         self.exitAction.triggered.connect(self.quit)
@@ -771,6 +775,49 @@ class Viewer(QtWidgets.QWidget):
         else:
             print("Failed to write YAML file.")
 
+    def getExpSettingsForHDF5Storage(self):
+        """Query User for Exp configuration settings to store as HDF5 Dataset attributes."""
+        pass
+
+    def storeDataInHDF5(self):
+        """Store current dataset and experiment configuration in HDF5 database file."""
+        if self.tabs.currentIndex() == 0:
+            current_data = self.leemdat.dat3d
+            current_exp = self.LEEM_tab_active_exp
+            if self.LEEM_tab_is_PEEM:
+                current_exp_type = "PEEM"
+            else:
+                current_exp_type = "LEEM"
+        elif self.tabs.currentIndex() == 1:
+            # LEED
+            current_data = self.leeddat.dat3d
+            current_exp = self.LEED_tab_active_exp
+            current_exp_type = "LEED"
+        else:
+            print("Error: Must have active data tab open to store data.")
+            return
+
+        home_dir = os.getenv("HOME")
+        caption = "Select HDF5 Database file"
+        hfile_path = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                           caption,
+                                                           directory=home_dir)
+        if isinstance(hfile_path, tuple):
+            # PYQT5 getOpenFileName returns a tuple
+            try:
+                hfile_path = hfile_path[0]  # discard the file filter and select only the file path string
+            except IndexError:
+                print('No HDF5 file found.')
+                print('Please Select a directory with a .h5 or .hdf5 file.')
+                print('Loading Canceled ...')
+                return
+
+        data_model = HF.HDF5TreeModel(hfile_path)
+        self.user_selected_HDF5_group_path = None  # flag to check for error on selection
+        self.HDF5_explorer = HF.HDF5Viewer(model=data_model)
+        self.HDF5_explorer.output_group_path_signal.connect(self.retrieveGroupPathFromHDF5)
+        self.data_to_store = [current_data, current_exp, current_exp_type]
+
     def loadDataFromHDF5(self):
         """Select Dataset to load from HDF5 Database."""
         # Query User for HDF5 Database file to analyze
@@ -1285,6 +1332,13 @@ class Viewer(QtWidgets.QWidget):
     def output_complete():
         """Recieved a finished() SIGNAL from a QThread object."""
         print('File output successfully')
+
+    @ QtCore.pyqtSlot(str)
+    def retrieveGroupPathFromHDF5(self, path):
+        """Grab the path to the User selected HDF5 Group."""
+        self.user_selected_HDF5_group_path = path
+        print("Successfully selected HDF5 Group: {}".format(path))
+        self.getExpSettingsForHDF5Storage()
 
     @QtCore.pyqtSlot(np.ndarray)
     def retrieveDataFromHDF5(self, data):

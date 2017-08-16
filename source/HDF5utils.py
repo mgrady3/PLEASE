@@ -15,17 +15,134 @@ import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
+class HDF5ExpSettingsWidget(QtWidgets.QWidget):
+    """Widget to get user input for exp settings to store in HDF5 Dataset attributes."""
+
+    output_settings_signal = QtCore.pyqtSignal(object)
+
+    def __init__(self, parent=None):
+        """Init view."""
+        super(QtWidgets.QWidget, self).__init__(parent)
+        self.setWindowTitle("Enter Experiment Settings")
+        self.layout = QtWidgets.QVBoxLayout()
+        self.initUI()
+
+    def initUI(self):
+        """Setup layout."""
+        # Exp type settings
+        self.exp_type_label = QtWidgets.QLabel("Exp. Type:")
+        type_label_hbox = QtWidgets.QHBoxLayout()
+        type_label_hbox.addStretch()
+        type_label_hbox.addWidget(self.exp_type_label)
+        type_label_hbox.addStretch()
+
+        type_vbox = QtWidgets.QVBoxLayout()
+        type_vbox.addLayout(type_label_hbox)
+
+        self.type_menu = QtWidgets.QComboBox()
+        self.type_menu.addItem("LEED")
+        self.type_menu.addItem("LEEM")
+        self.type_menu.addItem("PEEM")
+
+        type_menu_hbox = QtWidgets.QHBoxLayout()
+        type_menu_hbox.addStretch()
+        type_menu_hbox.addWidget(self.type_menu)
+        type_menu_hbox.addStretch()
+        type_vbox.addLayout(type_menu_hbox)
+
+        self.layout.addLayout(type_vbox)
+        self.layout.addWidget(h_line())
+
+        # Energy and time settings
+        energy_time_hbox = QtWidgets.QHBoxLayout()
+
+        time_settings_vbox = QtWidgets.QVBoxLayout()
+
+        time_series_hbox = QtWidgets.QHBoxLayout()
+        self.time_series_label = QtWidgets.QLabel("Time Series")
+        self.time_series_checkbox = QtWidgets.QCheckBox()
+        time_series_hbox.addWidget(self.time_series_label)
+        time_series_hbox.addStretch()
+        time_series_hbox.addWidget(self.time_series_checkbox)
+        time_settings_vbox.addLayout(time_series_hbox)
+
+        time_step_hbox = QtWidgets.QHBoxLayout()
+        self.time_step_label = QtWidgets.QLabel("Time Step")
+        self.time_step_input = QtWidgets.QLineEdit()
+        time_step_hbox.addWidget(self.time_step_label)
+        time_step_hbox.addStretch()
+        time_step_hbox.addWidget(self.time_step_input)
+        time_settings_vbox.addLayout(time_step_hbox)
+
+        # enable Time Step LineEdit only if Time Series Checkbox is active
+        self.time_step_input.setReadOnly(self.time_series_checkbox.checkState() == QtCore.Qt.Unchecked)
+        sig = self.time_series_checkbox.stateChanged
+        sig.connect(lambda state: self.time_step_input.setReadOnly(state == QtCore.Qt.Unchecked))
+
+        energy_time_hbox.addLayout(time_settings_vbox)
+        energy_time_hbox.addStretch()
+
+        energy_vbox = QtWidgets.QVBoxLayout()
+        self.energy_settings_label = QtWidgets.QLabel("Energy Settings:")
+        energy_vbox.addWidget(self.energy_settings_label)
+
+        energy_label_vbox = QtWidgets.QVBoxLayout()
+        energy_input_vbox = QtWidgets.QVBoxLayout()
+
+        energy_label_vbox.addWidget(QtWidgets.QLabel("min"))
+        energy_label_vbox.addWidget(QtWidgets.QLabel("max"))
+        energy_label_vbox.addWidget(QtWidgets.QLabel("step"))
+
+        column_hbox = QtWidgets.QHBoxLayout()
+        column_hbox.addLayout(energy_label_vbox)
+        column_hbox.addStretch()
+
+        self.min_energy_input = QtWidgets.QLineEdit()
+        self.max_energy_input = QtWidgets.QLineEdit()
+        self.step_energy_input = QtWidgets.QLineEdit()
+        energy_input_vbox.addWidget(self.min_energy_input)
+        energy_input_vbox.addWidget(self.max_energy_input)
+        energy_input_vbox.addWidget(self.step_energy_input)
+
+        column_hbox.addLayout(energy_input_vbox)
+
+        energy_vbox.addLayout(column_hbox)
+        energy_time_hbox.addLayout(energy_vbox)
+        self.layout.addLayout(energy_time_hbox)
+        self.layout.addStretch()
+        self.layout.addWidget(h_line())
+
+        # Buttons
+        button_hbox = QtWidgets.QHBoxLayout()
+        self.cancel_button = QtWidgets.QPushButton("Cancel", self)
+        self.done_button = QtWidgets.QPushButton("Done", self)
+        button_hbox.addWidget(self.cancel_button)
+        button_hbox.addStretch()
+        button_hbox.addWidget(self.done_button)
+
+        self.cancel_button.clicked.connect(lambda: self.close())
+        self.done_button.clicked.connect(self.validateInput)
+        self.layout.addLayout(button_hbox)
+
+        self.setLayout(self.layout)
+
+    def validateInput(self):
+        """Ensure valid user input."""
+        pass
+
+
 class HDF5Viewer(QtWidgets.QWidget):
     """Container for QTreeView populated from HDF5."""
 
     output_array_signal = QtCore.pyqtSignal(np.ndarray)
     output_array_attrs_signal = QtCore.pyqtSignal(object)
+    output_group_path_signal = QtCore.pyqtSignal(str)
 
     def __init__(self, model, parent=None):
         """Init view and set model."""
         super().__init__(parent)
         self.treeview = QtWidgets.QTreeView()
-        self.treeview.setWindowTitle("HDF5 File Explorer")
+        self.setWindowTitle("HDF5 File Explorer")
         self.treeview.setHeaderHidden(True)
         self.model = model
         self.treeview.setModel(model)
@@ -52,12 +169,14 @@ class HDF5Viewer(QtWidgets.QWidget):
 
         self.setLayout(self.layout)
 
-    def validateSelection(self):
+    def validateSelection(self, allow_group_selection=False):
         """Confirm that the current USER selection from the TreeView corresponds to an HDF5 Dataset.
 
         If the selection is valid, pass the selection paramters to HDF5ToArray()
         This will then provide a Numpy array to be returned for laoding into the main GUI.
         Adapted from Qt docs Model/View Tutorial "Working with Selections"
+
+        :parameter allow_group_selection: bool indicating if it is ok to select a HDF5 Group instead of Dataset
         """
         # Recursively climb tree heirarchy and assemble path from root to current node
         path = []
@@ -79,6 +198,16 @@ class HDF5Viewer(QtWidgets.QWidget):
             print("Error: {0} is not a valid path in HDF5 file {1}".format(user_selected_tree_path,
                                                                            self.model.hfile_path))
             return
+
+        # If we just want to select a valid Group simply check validity and emit the Group path then return
+        hfile = h5py.File(self.model.hfile_path, "r")
+        if allow_group_selection:
+            if isinstance(hfile[user_selected_tree_path], h5py._hl.group.Group):
+                self.output_group_path_signal.emit(user_selected_tree_path)
+                return
+        hfile.close()
+
+        # From here on we assume that we need to select data from a given HDF5 Dataset.
         data = HDF5ToArray(hfile_path=self.model.hfile_path,
                            hdf5_path_to_data=user_selected_tree_path)
         if data is None:
@@ -233,6 +362,22 @@ def HDF5ToArray(hfile_path, hdf5_path_to_data=None):
         return np.array(dataset)
     else:
         return None
+
+
+def h_line():
+    """Convienience to quickly add UI separators."""
+    f = QtWidgets.QFrame()
+    f.setFrameShape(QtWidgets.QFrame.HLine)
+    f.setFrameShadow(QtWidgets.QFrame.Sunken)
+    return f
+
+
+def v_line():
+    """Convienience to quickly add UI separators."""
+    f = QtWidgets.QFrame()
+    f.setFrameShape(QtWidgets.QFrame.VLine)
+    f.setFrameShadow(QtWidgets.QFrame.Sunken)
+    return f
 
 
 def main():
