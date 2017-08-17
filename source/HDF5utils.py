@@ -128,7 +128,57 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
 
     def validateInput(self):
         """Ensure valid user input."""
-        pass
+        exp_type_selection = self.type_menu.currentText()
+        is_time_series = self.time_series_checkbox.isChecked()
+        if is_time_series:
+            time_step = self.time_step_input.text()
+            try:
+                time_step = float(time_step)
+            except ValueError:
+                print("Error: Time Step must be input as a positive single decimal floating point.  ex: 0.1 ")
+                return
+            if time_step <= 0:
+                print("Error: Time Step must be input as a positive single decimal floating point.  ex: 0.1 ")
+                return
+            # for time series data we do not require energy settings
+            data_settings = {"Time Series": is_time_series,
+                             "Time Step": time_step}
+            self.output_settings_signal.emit(data_settings)
+            self.close()
+            return
+        min_energy = self.min_energy_input.text()
+        try:
+            min_energy = float(min_energy)
+        except ValueError:
+            print("Error: Minimum energy must be input as a single decimal floating point.  ex: 0.1 ")
+            return
+
+        max_energy = self.max_energy_input.text()
+        try:
+            max_energy = float(max_energy)
+        except ValueError:
+            print("Error: Maximum energy must be input as a single decimal floating point.  ex: 0.1 ")
+            return
+
+        step_energy = self.step_energy_input.text()
+        try:
+            step_energy = float(step_energy)
+        except ValueError:
+            print("Error: Step energy must be input as a positive single decimal floating point.  ex: 0.1 ")
+            return
+        if step_energy <= 0:
+            print("Error: Step energy must be input as a positive single decimal floating point.  ex: 0.1 ")
+            return
+        data_Settings = {"Time Series": is_time_series,
+                         "Min Energy": min_energy,
+                         "Max Energy": max_energy,
+                         "Step Energy": step_energy}
+        self.output_settings_signal.emit(data_Settings)
+        self.close()
+        return
+
+
+
 
 
 class HDF5Viewer(QtWidgets.QWidget):
@@ -138,9 +188,10 @@ class HDF5Viewer(QtWidgets.QWidget):
     output_array_attrs_signal = QtCore.pyqtSignal(object)
     output_group_path_signal = QtCore.pyqtSignal(str)
 
-    def __init__(self, model, parent=None):
+    def __init__(self, model, allow_group_selection=False, parent=None):
         """Init view and set model."""
         super().__init__(parent)
+        self.group = allow_group_selection
         self.treeview = QtWidgets.QTreeView()
         self.setWindowTitle("HDF5 File Explorer")
         self.treeview.setHeaderHidden(True)
@@ -159,7 +210,7 @@ class HDF5Viewer(QtWidgets.QWidget):
         self.cancel_button = QtWidgets.QPushButton("Cancel", self)
         self.cancel_button.clicked.connect(self.close)
         self.select_button = QtWidgets.QPushButton("Select", self)
-        self.select_button.clicked.connect(self.validateSelection)
+        self.select_button.clicked.connect(lambda: self.validateSelection(allow_group_selection=self.group))
 
         self.button_hbox.addWidget(self.cancel_button)
         self.button_hbox.addStretch()

@@ -814,7 +814,7 @@ class Viewer(QtWidgets.QWidget):
 
         data_model = HF.HDF5TreeModel(hfile_path)
         self.user_selected_HDF5_group_path = None  # flag to check for error on selection
-        self.HDF5_explorer = HF.HDF5Viewer(model=data_model)
+        self.HDF5_explorer = HF.HDF5Viewer(model=data_model, allow_group_selection=True)
         self.HDF5_explorer.output_group_path_signal.connect(self.retrieveGroupPathFromHDF5)
         self.data_to_store = [current_data, current_exp, current_exp_type]
 
