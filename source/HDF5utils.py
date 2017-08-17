@@ -29,6 +29,16 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
 
     def initUI(self):
         """Setup layout."""
+        # Dataset name
+        self.name_label = QtWidgets.QLabel("Enter name for HDF5 Dataset")
+        name_hbox = QtWidgets.QHBoxLayout()
+        name_hbox.addWidget(self.name_label)
+        name_hbox.addStretch()
+        self.name_input = QtWidgets.QLineEdit()
+        name_hbox.addWidget(self.name_input)
+        self.layout.addLayout(name_hbox)
+        self.layout.addWidget(h_line())
+
         # Exp type settings
         self.exp_type_label = QtWidgets.QLabel("Exp. Type:")
         type_label_hbox = QtWidgets.QHBoxLayout()
@@ -176,9 +186,6 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         self.output_settings_signal.emit(data_Settings)
         self.close()
         return
-
-
-
 
 
 class HDF5Viewer(QtWidgets.QWidget):
