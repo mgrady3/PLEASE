@@ -10,6 +10,7 @@ Collection of utility methods and classes for working with HDF5 data
 """
 
 import h5py
+import re
 import sys
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -42,7 +43,6 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         # Exp type settings
         self.exp_type_label = QtWidgets.QLabel("Exp. Type:")
         type_label_hbox = QtWidgets.QHBoxLayout()
-        type_label_hbox.addStretch()
         type_label_hbox.addWidget(self.exp_type_label)
         type_label_hbox.addStretch()
 
@@ -138,6 +138,15 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
 
     def validateInput(self):
         """Ensure valid user input."""
+        #validate Dataset name
+        name = str(self.name_input.text())
+        if not name:
+            print("Error: Name field can not be blank.")
+
+        chars = re.findall(r'[\w-_ ]+', name) # Thanks, Josh.
+        if chars:
+            print("Error: Name input contains one or more invalid characters: {}".format(chars))
+
         exp_type_selection = self.type_menu.currentText()
         is_time_series = self.time_series_checkbox.isChecked()
         if is_time_series:
@@ -151,7 +160,8 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
                 print("Error: Time Step must be input as a positive single decimal floating point.  ex: 0.1 ")
                 return
             # for time series data we do not require energy settings
-            data_settings = {"Time Series": is_time_series,
+            data_settings = {"Name": name,
+                             "Time Series": is_time_series,
                              "Time Step": time_step}
             self.output_settings_signal.emit(data_settings)
             self.close()
@@ -179,7 +189,8 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         if step_energy <= 0:
             print("Error: Step energy must be input as a positive single decimal floating point.  ex: 0.1 ")
             return
-        data_Settings = {"Time Series": is_time_series,
+        data_Settings = {"Name": name,
+                         "Time Series": is_time_series,
                          "Min Energy": min_energy,
                          "Max Energy": max_energy,
                          "Step Energy": step_energy}
