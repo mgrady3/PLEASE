@@ -16,6 +16,7 @@ semiconductors to metals in bulk or thin film as well as single layer 2D materia
 """
 
 # Stdlib and Scientific Stack imports
+import h5py
 import os
 import sys
 import yaml
@@ -775,9 +776,41 @@ class Viewer(QtWidgets.QWidget):
         else:
             print("Failed to write YAML file.")
 
+
     def getExpSettingsForHDF5Storage(self):
         """Query User for Exp configuration settings to store as HDF5 Dataset attributes."""
-        pass
+        print("Querying User for experiment settings ...")
+        self.exp_settings_widget = HF.HDF5ExpSettingsWidget()
+        self.exp_settings_widget.output_settings_signal.connect(self.retrieveExpSettingsToStoreInHDF5)
+
+    def writeDataToHDF5(self):
+        """Write current data to HDF5 with User input as Dataset attributes."""
+        hfile = h5py.File(self.data_to_store["HDF5 Path"], "r+")
+        group = hfile[self.user_selected_HDF5_group_path]
+        if self.user_selected_HDF5_group_path+"/"+self.exp_settings_to_store["Name"] in hfile:
+            # Dataset of this name already exists
+            data_already_stored = group[self.exp_settings_to_store["Name"]][:]
+            if np.allclose(data_already_stored, self.data_to_store["Data"]):
+                # data already exists, just set the attrs
+                dataset = group[self.exp_settings_to_store["Name"]]
+                for key, value in self.exp_settings_to_store.items():
+                    if key != "Name":
+                        dataset.attrs[key] = value
+                print("Successfully wrote to HDF5 file {}.".format(self.data_to_store["HDF5 Path"]))
+                hfile.close()
+                return
+            else:
+                print("Error: Dataset with this name already exists and the stored data does not match.")
+                print("PLEASE does not support overwriting existing data with non-matching data.")
+                return
+        # Dataset doesn't currently exist
+        dataset = group.create_dataset(self.exp_settings_to_store["Name"], data=self.data_to_store["Data"])
+        for key, value in self.exp_settings_to_store.items():
+            if key != "Name":
+                dataset.attrs[key] = value
+        print("Successfully wrote to HDF5 file {}.".format(self.data_to_store["HDF5 Path"]))
+        hfile.close()
+        return
 
     def storeDataInHDF5(self):
         """Store current dataset and experiment configuration in HDF5 database file."""
@@ -812,11 +845,19 @@ class Viewer(QtWidgets.QWidget):
                 print('Loading Canceled ...')
                 return
 
+        if hfile_path == "":
+            # User clicked cancel
+            return
+
         data_model = HF.HDF5TreeModel(hfile_path)
         self.user_selected_HDF5_group_path = None  # flag to check for error on selection
         self.HDF5_explorer = HF.HDF5Viewer(model=data_model, allow_group_selection=True)
         self.HDF5_explorer.output_group_path_signal.connect(self.retrieveGroupPathFromHDF5)
-        self.data_to_store = [current_data, current_exp, current_exp_type]
+        self.data_to_store = {"HDF5 Path": hfile_path,
+                              "Data": current_data,
+                              "YAML": current_exp,
+                              "Exp Type": current_exp_type}
+        # self.data_to_store = [hfile_path, current_data, current_exp, current_exp_type]
 
     def loadDataFromHDF5(self):
         """Select Dataset to load from HDF5 Database."""
@@ -1346,6 +1387,17 @@ class Viewer(QtWidgets.QWidget):
         self.array_from_HDF5 = data
         msg = "Successfully loaded numpy array from HDF5 with attributes: dtype={0}, shape={1}"
         print(msg.format(data.dtype, data.shape))
+
+    @QtCore.pyqtSlot(object)
+    def retrieveExpSettingsToStoreInHDF5(self, settings):
+        """Grab the User input experiment settings to store as HDF5 Dataset attributes."""
+        self.exp_settings_to_store = settings
+        print("Settings to store: ")
+        for key, value in self.exp_settings_to_store.items():
+            print("\t {}:, {}".format(key, value))
+        self.writeDataToHDF5()
+
+
 
     @QtCore.pyqtSlot(object)
     def retrieveExpSettingsFromHDF5(self, settings):

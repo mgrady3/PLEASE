@@ -27,6 +27,7 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         self.setWindowTitle("Enter Experiment Settings")
         self.layout = QtWidgets.QVBoxLayout()
         self.initUI()
+        self.show()
 
     def initUI(self):
         """Setup layout."""
@@ -143,7 +144,7 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         if not name:
             print("Error: Name field can not be blank.")
 
-        chars = re.findall(r'[\w-_ ]+', name) # Thanks, Josh.
+        chars = re.findall(r'[-_ \w]+', name) # Thanks, Josh.
         if chars:
             print("Error: Name input contains one or more invalid characters: {}".format(chars))
 
@@ -273,6 +274,8 @@ class HDF5Viewer(QtWidgets.QWidget):
         if allow_group_selection:
             if isinstance(hfile[user_selected_tree_path], h5py._hl.group.Group):
                 self.output_group_path_signal.emit(user_selected_tree_path)
+                hfile.close()
+                self.close()
                 return
         hfile.close()
 
