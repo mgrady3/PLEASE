@@ -139,12 +139,12 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
 
     def validateInput(self):
         """Ensure valid user input."""
-        #validate Dataset name
+        # validate Dataset name
         name = str(self.name_input.text())
         if not name:
             print("Error: Name field can not be blank.")
 
-        chars = re.findall(r'[-_ \w]+', name) # Thanks, Josh.
+        chars = re.findall(r'[-_ \w]+', name)  # Thanks, Josh.
         if chars:
             print("Error: Name input contains one or more invalid characters: {}".format(chars))
 
@@ -162,6 +162,7 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
                 return
             # for time series data we do not require energy settings
             data_settings = {"Name": name,
+                             "Exp Type": exp_type_selection,
                              "Time Series": is_time_series,
                              "Time Step": time_step}
             self.output_settings_signal.emit(data_settings)
@@ -191,6 +192,7 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
             print("Error: Step energy must be input as a positive single decimal floating point.  ex: 0.1 ")
             return
         data_Settings = {"Name": name,
+                         "Exp Type": exp_type_selection,
                          "Time Series": is_time_series,
                          "Min Energy": min_energy,
                          "Max Energy": max_energy,

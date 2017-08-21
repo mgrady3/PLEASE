@@ -466,47 +466,6 @@ class Viewer(QtWidgets.QWidget):
 
         configTabVBox.addWidget(smooth_group)
         configTabVBox.addWidget(self.h_line())
-        """
-        # LEED rect  size settings
-        RectSettingGroupBox = QtWidgets.QGroupBox()
-        LEEDRectSettingHBox = QtWidgets.QHBoxLayout()
-        LEEDRectSettingVBox = QtWidgets.QVBoxLayout()
-        RectSettingLabel = QtWidgets.QLabel("Enter LEED Window Side Length [even integer]")
-        LEEDRectSettingVBox.addWidget(RectSettingLabel)
-        self.LEEDRectEntry = QtWidgets.QLineEdit()
-        self.LEEDRectEntry.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                                         QtWidgets.QSizePolicy.Minimum)
-        entryHBox = QtWidgets.QHBoxLayout()
-        entryHBox.addWidget(self.LEEDRectEntry)
-        entryHBox.addStretch()
-        self.LEEDRectApplyButton = QtWidgets.QPushButton("Apply Window Size", self)
-        self.LEEDRectApplyButton.clicked.connect(self.apply_LEED_window_size)
-        RectButtonHBox = QtWidgets.QHBoxLayout()
-        RectButtonHBox.addWidget(self.LEEDRectApplyButton)
-        RectButtonHBox.addStretch()
-
-        LEEDRectSettingVBox.addLayout(entryHBox)
-        LEEDRectSettingVBox.addLayout(RectButtonHBox)
-
-        LEEDRectSettingHBox.addLayout(LEEDRectSettingVBox)
-        LEEDRectSettingHBox.addStretch()
-
-        RectSettingGroupBox.setLayout(LEEDRectSettingHBox)
-        configTabVBox.addWidget(RectSettingGroupBox)
-
-        # LEED Average Settings
-        AverageSettingGroupBox = QtWidgets.QGroupBox()
-        LEEDAverageSettingHBox = QtWidgets.QHBoxLayout()
-        LEEDAverageSettingVBox = QtWidgets.QVBoxLayout()
-        AverageSettingLabel = QtWidgets.QLabel("Enable LEED Average for File Output")
-        LEEDAverageSettingVBox.addWidget(AverageSettingLabel)
-        self.LEEDAverageToggleBox = QtWidgets.QCheckBox()
-        self.LEEDAverageToggleBox.stateChanged.connect(self.averageStateChanged)
-        LEEDAverageSettingVBox.addWidget(self.LEEDAverageToggleBox)
-        LEEDAverageSettingHBox.addLayout(LEEDAverageSettingVBox)
-        LEEDAverageSettingHBox.addStretch()
-        AverageSettingGroupBox.setLayout(LEEDAverageSettingHBox)
-        """
 
         # LEED Rect Size and File Output settings
         LEED_settings_groupbox = QtWidgets.QGroupBox()
@@ -540,48 +499,7 @@ class Viewer(QtWidgets.QWidget):
 
         configTabVBox.addWidget(LEED_settings_groupbox)
         configTabVBox.addWidget(self.h_line())
-        """
-        # crosshair settings
-        crosshairSettingsGroupBox = QtWidgets.QGroupBox()
-        crosshairHBox = QtWidgets.QHBoxLayout()
-        crosshairVBox = QtWidgets.QVBoxLayout()
-        crosshairLabel = QtWidgets.QLabel("Enter LEEM crosshair line width [int]")
-        crosshairVBox.addWidget(crosshairLabel)
-        self.crosshairText = QtWidgets.QLineEdit()
-        self.crosshairText.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                                         QtWidgets.QSizePolicy.Minimum)
-        crosshairVBox.addWidget(self.crosshairText)
-        buttonHbox = QtWidgets.QHBoxLayout()
-        self.apply_settings_crosshair_button = QtWidgets.QPushButton("Apply Settings", self)
-        self.apply_settings_crosshair_button.clicked.connect(self.validateWidth)
-        buttonHbox.addWidget(self.apply_settings_crosshair_button)
-        crosshairVBox.addLayout(buttonHbox)
-        crosshairHBox.addLayout(crosshairVBox)
-        crosshairHBox.addStretch()
-        crosshairSettingsGroupBox.setLayout(crosshairHBox)
 
-        configTabVBox.addWidget(crosshairSettingsGroupBox)
-        configTabVBox.addWidget(self.h_line())
-
-        LEEM_Linewidth_GroupBox = QtWidgets.QGroupBox()
-        LEEM_Linewidth_HBox = QtWidgets.QHBoxLayout()
-        LEEM_Linewidth_VBox = QtWidgets.QVBoxLayout()
-        LEEM_Linewidth_Label = QtWidgets.QLabel("Enter LEEM I(V) plot linewidth [int]")
-        LEEM_Linewidth_VBox.addWidget(LEEM_Linewidth_Label)
-        self.LEEM_Linewidth_Text = QtWidgets.QLineEdit()
-        self.LEEM_Linewidth_Text.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                                               QtWidgets.QSizePolicy.Minimum)
-        LEEM_Linewidth_VBox.addWidget(self.LEEM_Linewidth_Text)
-        LEEM_Linewidth_Button_HBox = QtWidgets.QHBoxLayout()
-        self.LEEM_Linewidth_Button = QtWidgets.QPushButton("Apply Settings", self)
-        self.LEEM_Linewidth_Button.clicked.connect(self.validateLEEMLinewidth)
-        LEEM_Linewidth_Button_HBox.addWidget(self.LEEM_Linewidth_Button)
-        LEEM_Linewidth_VBox.addLayout(LEEM_Linewidth_Button_HBox)
-        LEEM_Linewidth_HBox.addLayout(LEEM_Linewidth_VBox)
-        LEEM_Linewidth_HBox.addStretch()
-        LEEM_Linewidth_GroupBox.setLayout(LEEM_Linewidth_HBox)
-        configTabVBox.addWidget(LEEM_Linewidth_GroupBox)
-        """
         # Misc LEEM Settings
         LEEM_settings_groupbox = QtWidgets.QGroupBox()
         LEEM_settings_hbox = QtWidgets.QHBoxLayout()
@@ -776,7 +694,6 @@ class Viewer(QtWidgets.QWidget):
         else:
             print("Failed to write YAML file.")
 
-
     def getExpSettingsForHDF5Storage(self):
         """Query User for Exp configuration settings to store as HDF5 Dataset attributes."""
         print("Querying User for experiment settings ...")
@@ -891,10 +808,51 @@ class Viewer(QtWidgets.QWidget):
         self.HDF5_explorer.output_array_signal.connect(self.retrieveDataFromHDF5)
         self.HDF5_explorer.output_array_attrs_signal.connect(self.retrieveExpSettingsFromHDF5)
 
+    def displayDataLoadedFromHDF5(self):
+        """After loading experiment settings from HDF5 attributes, display data to appropriate tab."""
+        exp_type = self.exp_settings_from_HDF5["Exp Type"]
+        if exp_type == "LEEM":
+            print("Displaying LEEM data loaded from HDF5 ...")
+            self.leemdat.dat3d = self.array_from_HDF5
+            self.leemdat.dat3ds = self.leemdat.dat3d.copy()
+            self.leemdat.posMask = np.zeros((self.leemdat.dat3d.shape[0],
+                                             self.leemdat.dat3d.shape[1]))
+            self.HDF5AttributesToExpObject()
+            self.prev_exp = self.exp
+            self.exp = self.HDF5_exp
+            self.LEEM_tab_active_exp = self.HDF5_exp
+            self.update_LEEM_img_after_load()
+        elif exp_type == "LEED":
+            print("Displaying LEED data loaded from HDF5 ...")
+        elif exp_type == "PEEM":
+            print("Displaying PEEM data loaded from HDF5 ...")
+        else:
+            print("Error: Invalid experiment type loaded from HDF5 attributes.")
+            return
+
+    def HDF5AttributesToExpObject(self):
+        """Populate and Experiment object from the settings loaded from HDF5 Attributes."""
+        self.HDF5_exp = Experiment()
+        self.HDF5_exp.exp_type = self.exp_settings_from_HDF5["Exp Type"]
+        self.HDF5_exp.time = self.exp_settings_from_HDF5["Time Series"]
+        if self.HDF5_exp.time:
+            self.HDF5_exp.time_step = self.exp_settings_from_HDF5["Time Step"]
+        self.HDF5_exp.name = self.exp_settings_from_HDF5["Name"]
+        # path parameter doesn't matter
+        # data_type parameter doesn't matter
+        # ext doesn't matter
+        # bit size doesn't matter (already loaded array)
+        # byte order doesn't matter (already laoded array)
+        self.HDF5_exp.mine = self.exp_settings_from_HDF5["Min Energy"]
+        self.HDF5_exp.maxe = self.exp_settings_from_HDF5["Max Energy"]
+        self.HDF5_exp.stepe = self.exp_settings_from_HDF5["Step Energy"]
+        self.HDF5_exp.imw = self.array_from_HDF5.shape[1]
+        self.HDF5_exp.imh = self.array_from_HDF5.shape[0]
+
     def load_experiment(self):
         """Query User for YAML config file to load experiment settings.
 
-        Adapted from my other project https://www.github.com/mgrady3/pLEASE
+        Adapted from my other project https://www.github.com/mgrady3/pLEASE-Legacy
         """
         yamlFilter = "YAML (*.yaml);;YML (*.yml);;All Files (*)"
         home_dir = os.getenv("HOME")
@@ -1394,10 +1352,8 @@ class Viewer(QtWidgets.QWidget):
         self.exp_settings_to_store = settings
         print("Settings to store: ")
         for key, value in self.exp_settings_to_store.items():
-            print("\t {}:, {}".format(key, value))
+            print("\t {}: {}".format(key, value))
         self.writeDataToHDF5()
-
-
 
     @QtCore.pyqtSlot(object)
     def retrieveExpSettingsFromHDF5(self, settings):
@@ -1405,6 +1361,7 @@ class Viewer(QtWidgets.QWidget):
         self.exp_settings_from_HDF5 = settings
         msg = "Successfully loaded Settings attribute: {} from HDF5."
         print(msg.format(self.exp_settings_from_HDF5))
+        self.displayDataLoadedFromHDF5()
 
     @QtCore.pyqtSlot(np.ndarray)
     def retrieve_LEEM_data(self, data):
