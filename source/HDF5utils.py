@@ -143,10 +143,16 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         name = str(self.name_input.text())
         if not name:
             print("Error: Name field can not be blank.")
+            return
 
-        chars = re.findall(r'[-_ \w]+', name)  # Thanks, Josh.
-        if chars:
-            print("Error: Name input contains one or more invalid characters: {}".format(chars))
+        # Thanks to Joshua Adam for the regex help
+        pattern = r'[-() \w]+'  # letters, numbers, whitespace, hyphen, parenthesis are all ok; no other symbols
+
+        if not re.fullmatch(pattern, name):
+            print("Error: Name input contains one or more invalid characters.")
+            print("Input string must only contain letters, numbers, whitespace, hyphens and parentheses; no other symbols are valid.")
+            print("Example: Graphene-Ru(0001) is ok; Graphene/Ru(0001) is not.")
+            return
 
         exp_type_selection = self.type_menu.currentText()
         is_time_series = self.time_series_checkbox.isChecked()
@@ -160,7 +166,8 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
             if time_step <= 0:
                 print("Error: Time Step must be input as a positive single decimal floating point.  ex: 0.1 ")
                 return
-            # for time series data we do not require energy settings
+
+            # For time series data we do not require energy settings so we can now output the settings
             data_settings = {"Name": name,
                              "Exp Type": exp_type_selection,
                              "Time Series": is_time_series,
@@ -168,6 +175,7 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
             self.output_settings_signal.emit(data_settings)
             self.close()
             return
+
         min_energy = self.min_energy_input.text()
         try:
             min_energy = float(min_energy)
@@ -191,13 +199,13 @@ class HDF5ExpSettingsWidget(QtWidgets.QWidget):
         if step_energy <= 0:
             print("Error: Step energy must be input as a positive single decimal floating point.  ex: 0.1 ")
             return
-        data_Settings = {"Name": name,
+        data_settings = {"Name": name,
                          "Exp Type": exp_type_selection,
                          "Time Series": is_time_series,
                          "Min Energy": min_energy,
                          "Max Energy": max_energy,
                          "Step Energy": step_energy}
-        self.output_settings_signal.emit(data_Settings)
+        self.output_settings_signal.emit(data_settings)
         self.close()
         return
 

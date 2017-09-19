@@ -704,15 +704,18 @@ class Viewer(QtWidgets.QWidget):
         """Write current data to HDF5 with User input as Dataset attributes."""
         hfile = h5py.File(self.data_to_store["HDF5 Path"], "r+")
         group = hfile[self.user_selected_HDF5_group_path]
-        if self.user_selected_HDF5_group_path+"/"+self.exp_settings_to_store["Name"] in hfile:
+        dset_name = self.user_selected_HDF5_group_path+"/"+self.exp_settings_to_store["Name"]
+        if dset_name in hfile:
             # Dataset of this name already exists
+            print("Dataset with name {0} already exists in file {1}.".format(dset_name, self.data_to_store["HDF5 Path"]))
+            print("Checking if data in HDF5 dataset matches current data ...")
             data_already_stored = group[self.exp_settings_to_store["Name"]][:]
             if np.allclose(data_already_stored, self.data_to_store["Data"]):
                 # data already exists, just set the attrs
                 dataset = group[self.exp_settings_to_store["Name"]]
+                print("Data in HDF5 dataset matches current data. Setting dataset attributes ...")
                 for key, value in self.exp_settings_to_store.items():
-                    if key != "Name":
-                        dataset.attrs[key] = value
+                    dataset.attrs[key] = value
                 print("Successfully wrote to HDF5 file {}.".format(self.data_to_store["HDF5 Path"]))
                 hfile.close()
                 return
@@ -720,11 +723,13 @@ class Viewer(QtWidgets.QWidget):
                 print("Error: Dataset with this name already exists and the stored data does not match.")
                 print("PLEASE does not support overwriting existing data with non-matching data.")
                 return
+
         # Dataset doesn't currently exist
+        print("No HDF5 dataset with name {0} found in file {1}.".format(dset_name, self.data_to_store["HDF5 Path"]))
+        print("Creating new dataset from current data ...")
         dataset = group.create_dataset(self.exp_settings_to_store["Name"], data=self.data_to_store["Data"])
         for key, value in self.exp_settings_to_store.items():
-            if key != "Name":
-                dataset.attrs[key] = value
+            dataset.attrs[key] = value
         print("Successfully wrote to HDF5 file {}.".format(self.data_to_store["HDF5 Path"]))
         hfile.close()
         return
