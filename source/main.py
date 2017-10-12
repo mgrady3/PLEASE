@@ -54,8 +54,6 @@ def main():
     yo = 460
     w = 462
     h = 25
-    # progressbar.setGeometry(splashscreen.width()/10, int(9.5*splashscreen.height()/10),
-    #                        8*splashscreen.width()/10, splashscreen.height()/20)
     progressbar.setGeometry(xo, yo, w, h)
 
     splashscreen.show()
@@ -66,9 +64,9 @@ def main():
         app.processEvents()
         progressbar.setValue(p)
         app.processEvents()
-        time.sleep(1)
+        time.sleep(0.3)
         app.processEvents()
-        p += 20
+        p += 5
 
     mw = MainWindow(v=__Version)
     mw.showMaximized()
@@ -76,7 +74,7 @@ def main():
 
     # This is a big fix for PyQt5 on macOS
     # When running a PyQt5 application that is not bundled into a
-    # macOS app bundle; the main menu will not be clickable until you
+    # macOS app bundle, the main menu will not be clickable until you
     # switch to another application then switch back.
     # Thus to fix this we execute a quick applescript from the file
     # cmd.scpt which automates the keystroke "Cmd+Tab" twice to swap
