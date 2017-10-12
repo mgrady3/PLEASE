@@ -827,8 +827,18 @@ class Viewer(QtWidgets.QWidget):
             self.exp = self.HDF5_exp
             self.LEEM_tab_active_exp = self.HDF5_exp
             self.update_LEEM_img_after_load()
+            self.tabs.setCurrentIndex(0)
+
         elif exp_type == "LEED":
             print("Displaying LEED data loaded from HDF5 ...")
+            self.leeddat.dat3d = self.array_from_HDF5
+            self.HDF5AttributesToExpObject()
+            self.prev_exp = self.exp
+            self.exp = self.HDF5_exp
+            self.LEED_tab_active_exp = self.HDF5_exp
+            self.update_LEED_img_after_load()
+            self.tabs.setCurrentIndex(1)
+
         elif exp_type == "PEEM":
             print("Displaying PEEM data loaded from HDF5 ...")
         else:
