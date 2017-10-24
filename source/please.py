@@ -1759,10 +1759,16 @@ class Viewer(QtWidgets.QWidget):
 
         pen = pg.mkPen(self.qcolors[self.LEEMclicks - 1], width=self.LEEM_Linewidth)
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
+
+        yaxis = self.staticLEEMplot.getAxis("left")
+        # y axis is 'arbitrary units'; we don't want kilo or mega arbitrary units etc...
+        yaxis.enableAutoSIPrefix(False)
+
         self.staticLEEMplot.addItem(pdi)
         self.staticLEEMplot.setTitle("LEEM-I(V)")
         self.staticLEEMplot.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
         self.staticLEEMplot.setLabel('left', 'Intensity', units='a.u.', **self.labelStyle)
+
         if not self.staticLEEMplot.isVisible():
             self.staticLEEMplot.show()
 
