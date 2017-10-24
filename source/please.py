@@ -1892,9 +1892,12 @@ class Viewer(QtWidgets.QWidget):
         self.staticLEEMplot.setTitle("LEEM-I(V)")
         self.staticLEEMplot.setLabel('bottom', 'Energy', units='eV', **self.labelStyle)
         self.staticLEEMplot.setLabel('left', 'Intensity', units='a.u.', **self.labelStyle)
+        yaxis = self.staticLEEMplot.getAxis("left")
+        # y axis is 'arbitrary units'; we don't want kilo or mega arbitrary units etc...
+        yaxis.enableAutoSIPrefix(False)
         if not self.staticLEEMplot.isVisible():
             self.staticLEEMplot.show()
-
+    
     def handleLEEMMouseMoved(self, pos):
         """Track mouse movement within LEEM image area and display I(V) from mouse location."""
         if not self.hasdisplayedLEEMdata:
