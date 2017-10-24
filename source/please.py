@@ -1897,7 +1897,7 @@ class Viewer(QtWidgets.QWidget):
         yaxis.enableAutoSIPrefix(False)
         if not self.staticLEEMplot.isVisible():
             self.staticLEEMplot.show()
-    
+
     def handleLEEMMouseMoved(self, pos):
         """Track mouse movement within LEEM image area and display I(V) from mouse location."""
         if not self.hasdisplayedLEEMdata:
