@@ -7,6 +7,7 @@ Experiment:
     Name:  # This can be anything you liker [string]
     Data Type:  # Choose either "Image" or "Raw" [string]
     File Format:  # File Extension including the . [string]
+    Time Series:  # Should data be interpreted as I(t) rather than I(V) [bool]
     Image Parameters:
         Height:  # Height of your image data[int]
         Width:  # Width of your image data[int]
@@ -16,8 +17,9 @@ Experiment:
         Step:  # Energy step between each image in eV [float]
     Data Path:  # Absolute path to your data files [string]
 
-# Additional Required parameters if "Raw" is your data type
+# Additional Required parameters if "Raw" is your data type or if data is Time Series
     Bit Size:  # Number of bits per pixel in your data (Must be 8 or 16) [int]
     Byte Order:  # 'Endian-ness' Choose either "L" or "B" [string]
+    Time Step:  # Time step in seconds between images [float]
 
  An example of an experiment configuration file can be seen in this same directory in the file "Experiment.yaml"
