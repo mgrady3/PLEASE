@@ -40,10 +40,13 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
   * Step Energy [single decimal float i.e. 2.0]
 * Data parameters:
   * Data Type [string] valid parameters are {"Image", "Raw"}
-  * File format [string] {".tif", ".png", ".dat"}
+  * File format [string] {".tif", ".png", ".dat"}1
+  * Time Series [bool] Flag to indicate if data should be interpreted as I(t) rather than I(V)
   * Bit Depth (Required for loading raw data) [integer] valid parameters are {8, 16} for 8 and 16 bit data respectively
   * Byte Order (Required for loading raw data) [string] {"L" for little endian, "B" for big endian}
+  * Time Step [float] time in seconds between images for Time Series data
   * Data path [string pointing to folder containing data files]
+  
 
 An example file and instructions for creating your own experiment configuration files can be found in the subdirectory Experiment-YAML of this repository. Finally, a few test data sets are provided to ensure PLEASE is functioning properly. Each of these sets is accompanied by a .yaml experiment configuration file that must be edited with the correct data paths.
 
