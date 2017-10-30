@@ -3,6 +3,7 @@ Experiment:
      Name: "Graphene_on_Ruthenium"
      Data Type: "Raw"
      File Format: ".dat"
+     Time Series: false
      Image Parameters:
           Height: 1200
           Width: 1200
@@ -14,3 +15,4 @@ Experiment:
      # Additional required parameters since Raw was chosen as data type
      Bit Size: 16
      Byte Order: "L"
+     Time Step: 0.0
