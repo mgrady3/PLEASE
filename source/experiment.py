@@ -47,7 +47,6 @@ class Experiment(object):
     def toFile(settings):
         """Write experiment settings to a YAML config file.
 
-        To Be Implemented later.
         :return: None
         """
         # TODO wrap this with try/except KeyError

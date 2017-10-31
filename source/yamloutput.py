@@ -3,7 +3,7 @@
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
-Date: April, 2017
+Date: October, 2017
 
 This file contains a widget which provides a user interface to create an Experiment Configuration File,
 which will be saved and output as a .yaml file. This file can then be loaded by PLEASE to facilitate the
@@ -24,6 +24,7 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         self.dataPath = None
         self.pathButton.clicked.connect(self.getPath)
         self.doneButton.clicked.connect(self.parseInput)
+        self.setWindowTitle("Enter Data Settings")
         self.show()
 
     def getPath(self):
@@ -83,6 +84,26 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         fileTypeHBox.addStretch()
         fileTypeHBox.addWidget(self.fileTypeMenu)
         mainVBox.addLayout(fileTypeHBox)
+
+        # Time Series
+        timeSeriesHBox = QtWidgets.QHBoxLayout()
+        timeSeriesLabel = QtWidgets.QLabel("Interpret data as time series?")
+        self.timeSeriesCheckBox = QtWidgets.QCheckBox("Enabled")
+        self.timeSeriesCheckBox.stateChanged.connect(self.enableDisableTimeStepInput)
+        timeSeriesHBox.addWidget(timeSeriesLabel)
+        timeSeriesHBox.addStretch()
+        timeSeriesHBox.addWidget(self.timeSeriesCheckBox)
+        mainVBox.addLayout(timeSeriesHBox)
+
+        # Time Step
+        timeStepHBox = QtWidgets.QHBoxLayout()
+        timeStepLabel = QtWidgets.QLabel("Time step between images in seconds [float]:")
+        self.timeStepText = QtWidgets.QLineEdit()
+        timeStepHBox.addWidget(timeStepLabel)
+        timeStepHBox.addStretch()
+        timeStepHBox.addWidget(self.timeStepText)
+        mainVBox.addLayout(timeStepHBox)
+
 
         # Image Parameters
         mainVBox.addWidget(QtWidgets.QLabel("Image Parameters:"))
@@ -166,6 +187,14 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         mainVBox.addLayout(doneButtonHBox)
         self.setLayout(mainVBox)
 
+    @QtCore.pyqtSlot(int)
+    def enableDisableTimeStepInput(self, state):
+        """Toggle ability to input a value in the Time Step QLineEdit based on QCheckBox state."""
+        if state == 0:
+            self.timeStepText.setEnabled(False)
+        else:
+            self.timeStepText.setEnabled(True)
+
     def parseInput(self):
         """Triggered when User clicks Done button.
 
@@ -184,32 +213,44 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
 
         fileext = str(self.fileTypeMenu.currentText()).lower()
 
+        timeseries = self.timeSeriesCheckBox.isChecked()
+        timestep = 0.0  # default value
+        if timeseries:
+            try:
+                timestep = float(self.timeStepText.text())
+            except ValueError:
+                print("Error: Time Step must be a decimal number > 0 (ex: 0.1).")
+                return
+            if timestep < 0:
+                print("Error: Time Step must be a decimal number > 0 (ex: 0.1).")
+                return
+
         try:
             imht = int(self.htText.text())
         except ValueError:
-            print("Error: Image Height must be an integer > 0.")
+            print("Error: Image Height must be an integer > 0 (ex: 1024).")
             return
         if imht <= 0:
-            print("Error: Image Height must be an integer > 0.")
+            print("Error: Image Height must be an integer > 0 (ex: 1024).")
             return
         try:
             imwd = int(self.wdText.text())
         except ValueError:
-            print("Error: Image Width must be an integer > 0.")
+            print("Error: Image Width must be an integer > 0 (ex: 1024).")
             return
         if imwd <= 0:
-            print("Error: Image Height must be an integer > 0.")
+            print("Error: Image Height must be an integer > 0 (ex: 1024).")
             return
 
         try:
             minE = float(self.minEText.text())
         except ValueError:
-            print("Error: Minimum energy must be a floating point number.")
+            print("Error: Minimum energy must be a decimal number (ex: 0.1).")
             return
         try:
             maxE = float(self.maxEText.text())
         except ValueError:
-            print("Error: Maximum energy must be a floating point number.")
+            print("Error: Maximum energy must be a decimal number (ex: 0.1).")
             return
         if maxE <= minE:
             print("Error: Maximum Energy must be > Minimum Energy.")
@@ -217,7 +258,7 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         try:
             stepE = float(self.stepEText.text())
         except ValueError:
-            print("Error: Energy Step Size must be a floating point number.")
+            print("Error: Energy Step Size must be a decimal number (ex: 0.1).")
             return
 
         bitsize = str(self.bitSizeMenu.currentText())
@@ -241,6 +282,7 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
             "Experiment Type": exptype,
             "Data Type": datatype,
             "File Format": fileext,
+            "Time Series": timeseries,
             "Image Height": imht,
             "Image Width": imwd,
             "Minimum Energy": minE,
@@ -248,7 +290,8 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
             "Energy Step Size": stepE,
             "Data Path": self.dataPath,
             "Bit Depth": bitsize,
-            "Byte Order": byteorder
+            "Byte Order": byteorder,
+            "Time Step": timestep
         }
         self.userData.emit(settings)
         self.close()
