@@ -50,6 +50,17 @@ Since LEEM and LEED data sets are collected with a wide range of experimental pa
 
 An example file and instructions for creating your own experiment configuration files can be found in the subdirectory Experiment-YAML of this repository. Finally, a few test data sets are provided to ensure PLEASE is functioning properly. Each of these sets is accompanied by a .yaml experiment configuration file that must be edited with the correct data paths.
 
+## Essential Features:
+* Image visualization for LEEM and LEED data; Partial support for PEEM images without spectroscopic data
+* Real time I(V) extraction for LEEM images. User selectable extraction for LEED images
+* Output of I(V) data to tab delimited text files
+* Standardized meta-data format for description of experimental parameters used for file input described above
+* Data smoothing for I(V) curves using pre-defined window functions
+* Automated local background analysis for user selected LEED windows
+
+
+
+
 ## Installation
 For detailed instructions on how to install and run PLEASE, see the file [INSTALLATION.md](INSTALLATION.md) contained within this source repository.
 
