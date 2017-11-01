@@ -97,7 +97,7 @@ for idx, path in enumerate(top_dirs):
     # search for correct setting to adjust
     print("Searching for data path setting to adjust ...")
     for line_index, line in enumerate(lines):
-        if line.startswith("    Data Path:"):
+        if "Data Path:" in line:
             # print("Found path to adjust at index {}: {}".format(line_index, line))
             # print("Found path to adjust in file {}".format(settings_file))
             line_num = line_index
