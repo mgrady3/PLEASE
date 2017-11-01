@@ -900,6 +900,11 @@ class Viewer(QtWidgets.QWidget):
             # self.LEEDimageplotwidget.getPlotItem().clear()
             self.LEEDivplotwidget.getPlotItem().clear()
             self.LEEDimagewidget.clear()
+        if self.exp.time:
+            # This is an I(t) data set
+            print("Loading data as Time Series")
+            self.LEEDivplotwidget.setLabel('bottom', 'Time', units='s', **self.labelStyle)
+            self.currentLEEDTime = True
         if self.exp.data_type.lower() == 'raw':
             try:
                 # use settings from self.exp
@@ -1277,6 +1282,17 @@ class Viewer(QtWidgets.QWidget):
         self.leeddat.dat3ds = data.copy()
         self.leeddat.posMask = np.zeros((self.leeddat.dat3d.shape[0],
                                          self.leeddat.dat3d.shape[1]))
+        if self.currentLEEDTime:
+            # populate self.leeddat.timelist via settings from self.exp
+            try:
+                time_step = self.exp.time_step
+            except AttributeError:
+                print("Error: No Time Step setting found in loaded experiment settings.")
+                print("Defaulting to 1.0s per image.")
+                time_step = 1.0
+            print("Creating LEED time series ...")
+            self.leeddat.timelist = [k * time_step for k in range(self.leeddat.dat3d.shape[2])]
+        return
 
     @QtCore.pyqtSlot()
     def update_LEEM_img_after_load(self):
@@ -1373,6 +1389,7 @@ class Viewer(QtWidgets.QWidget):
         title = "Reciprocal Space LEED Image: {} eV"
         energy = LF.filenumber_to_energy(self.leeddat.elist, self.curLEEDIndex)
         self.LEEDTitle.setText(title.format(energy))
+        self.LEEDimagewidget.setFocus()
 
     def checkDataSize(self, datatype=None):
         """Ensure helper array sizes all match main data array size."""
@@ -2319,21 +2336,33 @@ class Viewer(QtWidgets.QWidget):
                 self.curLEEDIndex -= 1
 
                 self.showLEEDImage(self.curLEEDIndex)
-
+                """
                 title = "Reciprocal Space LEED Image: {} eV"
                 energy = LF.filenumber_to_energy(self.leeddat.elist,
                                                  self.curLEEDIndex)
                 self.LEEDTitle.setText(title.format(energy))
+                """
             elif (event.key() == QtCore.Qt.Key_Right) and \
                  (self.curLEEDIndex <= maxIdx - 1):
                 self.curLEEDIndex += 1
 
                 self.showLEEDImage(self.curLEEDIndex)
-
+                """
                 title = "Reciprocal Space LEED Image: {} eV"
                 energy = LF.filenumber_to_energy(self.leeddat.elist,
                                                  self.curLEEDIndex)
                 self.LEEDTitle.setText(title.format(energy))
+                """
+            title = "Reciprocal Space {0} Image: {1} {2}"
+            energy = LF.filenumber_to_energy(self.leeddat.elist, self.curLEEDIndex)
+            if self.currentLEEDTime:
+                energy = self.leeddat.timelist[self.curLEEDIndex]  # this is a time
+                unit = "s"
+            else:
+                unit = "eV"
+            self.LEEDTitle.setText(title.format(self.LEED_tab_active_exp.exp_type,
+                                                  energy,
+                                                  unit))
 
     def showLEEMImage(self, idx):
         """Display LEEM image from main data array at index=idx."""
