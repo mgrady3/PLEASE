@@ -1,11 +1,9 @@
 """
 PLEASE - The Python Low-energy Electron Analysis SuitE.
-
 Author: Maxwell Grady
 Affiliation: University of New Hampshire Department of Physics Pohl group
 Version 1.0.0
 Date: May, 2017
-
 Generic LEEM / LEED experiment object
 Used for serializing experiment configuration data
 """
@@ -18,7 +16,6 @@ pp = pprint.PrettyPrinter(indent=4)
 
 class Experiment(object):
     """Container object to hold Experiment Parameters.
-
     These parameters are loaded from User created YAML config files.
     """
 
@@ -46,7 +43,7 @@ class Experiment(object):
     @staticmethod
     def toFile(settings):
         """Write experiment settings to a YAML config file.
-
+        This form of YAML output is used by the genConfigFile() method in please.py
         :return: None
         """
         # TODO wrap this with try/except KeyError
@@ -90,7 +87,6 @@ class Experiment(object):
     def fromFile(self, fl):
         """
         Read in parameters from a YMAL file.
-
         :param fl: string path to YAML file
         :return:
         """
@@ -139,7 +135,6 @@ class Experiment(object):
     # TODO update tests for Time Series flags.
     def test_load(self):
         """Test Loading a pre-made file with hard coded path.
-
         :return: None
         """
         test_file = '/Users/Maxwell/Desktop/141020_03_LEEM-IV_50FOV.yaml'
@@ -149,7 +144,6 @@ class Experiment(object):
 
     def test_fill(self):
         """Test filling object attributes from YAML file.
-
         :return: None
         """
         if self.loaded_settings is not None and self._Test:
