@@ -32,6 +32,7 @@ class LeedData(object):
         self.wd = 0  # Width of image used in loading Raw data
         self.box_rad = br  # default value is 20 yielding a 40x40 rectangular integration window
         self.average_ilist = None
+        self.timelist = []  # used for plotting I(t) data
 
 
 class LeemData(object):
