@@ -89,7 +89,8 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         timeSeriesHBox = QtWidgets.QHBoxLayout()
         timeSeriesLabel = QtWidgets.QLabel("Interpret data as time series?")
         self.timeSeriesCheckBox = QtWidgets.QCheckBox("Enabled")
-        self.timeSeriesCheckBox.stateChanged.connect(self.enableDisableTimeStepInput)
+        self.timeSeriesCheckBox.setCheckState(0)  # default to not time series
+        self.timeSeriesCheckBox.stateChanged.connect(self.enableDisableSettingsInput)
         timeSeriesHBox.addWidget(timeSeriesLabel)
         timeSeriesHBox.addStretch()
         timeSeriesHBox.addWidget(self.timeSeriesCheckBox)
@@ -99,6 +100,7 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         timeStepHBox = QtWidgets.QHBoxLayout()
         timeStepLabel = QtWidgets.QLabel("Time step between images in seconds [float]:")
         self.timeStepText = QtWidgets.QLineEdit()
+        self.timeStepText.setEnabled(False)  # default to not time series
         timeStepHBox.addWidget(timeStepLabel)
         timeStepHBox.addStretch()
         timeStepHBox.addWidget(self.timeStepText)
@@ -188,12 +190,21 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         self.setLayout(mainVBox)
 
     @QtCore.pyqtSlot(int)
-    def enableDisableTimeStepInput(self, state):
-        """Toggle ability to input a value in the Time Step QLineEdit based on QCheckBox state."""
+    def enableDisableSettingsInput(self, state):
+        """Toggle ability to input a value in the Time Step QLineEdit based on QCheckBox state.
+           Toggle ability to input energy settings based on QCheckBox state.
+           Energy settings are not required if data is interpreted as a time series.
+        """
         if state == 0:
+            # not time series data
             self.timeStepText.setEnabled(False)
+            for w in [self.minEText, self.maxEText, self.stepEText]:
+                w.setEnabled(True)
         else:
+            # time series data
             self.timeStepText.setEnabled(True)
+            for w in [self.minEText, self.maxEText, self.stepEText]:
+                w.setEnabled(False)
 
     def parseInput(self):
         """Triggered when User clicks Done button.
@@ -241,25 +252,31 @@ class ExperimentYAMLOutput(QtWidgets.QWidget):
         if imwd <= 0:
             print("Error: Image Height must be an integer > 0 (ex: 1024).")
             return
-
-        try:
-            minE = float(self.minEText.text())
-        except ValueError:
-            print("Error: Minimum energy must be a decimal number (ex: 0.1).")
-            return
-        try:
-            maxE = float(self.maxEText.text())
-        except ValueError:
-            print("Error: Maximum energy must be a decimal number (ex: 0.1).")
-            return
-        if maxE <= minE:
-            print("Error: Maximum Energy must be > Minimum Energy.")
-            return
-        try:
-            stepE = float(self.stepEText.text())
-        except ValueError:
-            print("Error: Energy Step Size must be a decimal number (ex: 0.1).")
-            return
+        if not timeseries:
+            try:
+                minE = float(self.minEText.text())
+            except ValueError:
+                print("Error: Minimum energy must be a decimal number (ex: 0.1).")
+                return
+            try:
+                maxE = float(self.maxEText.text())
+            except ValueError:
+                print("Error: Maximum energy must be a decimal number (ex: 0.1).")
+                return
+            if maxE <= minE:
+                print("Error: Maximum Energy must be > Minimum Energy.")
+                return
+            try:
+                stepE = float(self.stepEText.text())
+            except ValueError:
+                print("Error: Energy Step Size must be a decimal number (ex: 0.1).")
+                return
+        else:
+            # data is a time series
+            # energy settings are arbitrary and not used for input
+            minE = 0.0
+            maxE = 1.0
+            stepE = 0.1
 
         bitsize = str(self.bitSizeMenu.currentText())
         if bitsize == "16-bit":
