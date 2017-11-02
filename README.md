@@ -57,6 +57,8 @@ An example file and instructions for creating your own experiment configuration 
 * Standardized meta-data format for description of experimental parameters used for file input described above
 * Data smoothing for I(V) curves using pre-defined window functions
 * Automated local background analysis for user selected LEED windows
+* Line profile analysis for LEEM data sets
+* Time series data analysis: I(t)
 
 
 
