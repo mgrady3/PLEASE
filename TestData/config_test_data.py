@@ -18,7 +18,6 @@ initially set in the project directory, then this script will fail.
 import glob
 import os
 import sys
-import yaml
 
 
 if not os.path.abspath(".").split(os.sep)[-1] == "TestData":
