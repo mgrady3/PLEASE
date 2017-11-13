@@ -1566,7 +1566,11 @@ class Viewer(QtWidgets.QWidget):
             ilist = [img.sum()/(width*height) for img in np.rollaxis(window, 2)]
             if self.smoothLEEMplot:
                 ilist = LF.smooth(ilist, window_len=self.LEEMWindowLen, window_type=self.LEEMWindowType)
-            self.LEEMivplotwidget.plot(self.leemdat.elist,
+            if self.currentLEEMTime:
+                xdata = self.leemdat.timelist
+            else:
+                xdata = self.leemdat.elist
+            self.LEEMivplotwidget.plot(xdata,
                                        ilist,
                                        pen=pg.mkPen(tup[2].color(), width=self.LEEM_Linewidth))
 
