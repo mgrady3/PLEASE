@@ -187,6 +187,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.disableLEEMROIAction.triggered.connect(self.viewer.disableLEEMROIAnalysis)
         LEEMMenu.addAction(self.disableLEEMROIAction)
 
+        self.extractLEEMROIAction = QtWidgets.QAction("Extract I(V) from ROIs", self)
+        self.extractLEEMROIAction.triggered.connect(self.viewer.extractLEEMROI)
+        LEEMMenu.addAction(self.extractLEEMROIAction)
+
         # LEED menu
         self.extractAction = QtWidgets.QAction("Extract I(V)", self)
         # extractAction.setShortcut("Ctrl-E")
@@ -1865,6 +1869,9 @@ class Viewer(QtWidgets.QWidget):
         Disable I(V) popout on mouse click event
         then setup new mouse click handle to add pyqtgraph ROI object to scene.
         """
+        if not self.hasdisplayedLEEMdata:
+            return
+
         try:
             self.sigmmvLEEM.disconnect()
         except:
@@ -1895,6 +1902,10 @@ class Viewer(QtWidgets.QWidget):
                 self.LEEMimageplotwidget.scene().removeItem(item[0])
         self.LEEMRects = []
 
+        # enable menu action for extraction
+        self.parentWidget().extractLEEMROIAction.setEnabled(True)
+
+
         self.LEEM_ROIS = []
 
         # connect new signal for mouse click events
@@ -1904,6 +1915,9 @@ class Viewer(QtWidgets.QWidget):
         """Disable analysis of LEEM-I(V) via built-in pyqtgraph ROI objects.
         Reset mouse event handles to track mouse movement and handle mouse click events.
         """
+        if not self.hasdisplayedLEEMdata:
+            return
+
         try:
             self.sigmmvLEEM.disconnect()
         except:
@@ -1923,12 +1937,59 @@ class Viewer(QtWidgets.QWidget):
         if self.LEEM_ROIS:
             pass
 
+        # disable menu action for extraction
+        self.parentWidget().extractLEEMROIAction.setEnabled(False)
+
         self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
         self.sigmcLEEM.connect(self.handleLEEMClick)
 
-    def addLEEMROI(self):
+    def addLEEMROI(self, event):
         """Add ROI for I(V) analysis to current mouse position in LEEM scene."""
-        pass
+        if event.button() == 2:
+            return  # filter out right click events
+
+        if len(self.LEEM_ROIS) >= len(self.qcolors):
+            print("Maximum number of simultaneous ROIs reached. Please clear one or more ROIs first.")
+            return
+
+        # create new rect ROI centered at mouse position
+
+        pos = event.pos()
+        mappedPos = self.LEEMimage.mapFromScene(pos)
+        xmapfs = int(mappedPos.x())  # array coordinates
+        ymapfs = int(mappedPos.y())  # array coordinates
+        x = pos.x()  # scene coordinates
+        y = pos.y()  # scene coordinates
+
+        if (xmapfs - 10 < 0 or
+            ymapfs - 10 < 0 or
+            xmapfs + 10 >= self.leemdat.dat3d.shape[1] or
+            ymapfs + 10 >= self.leemdat.dat3d.shape[0]):
+
+            print("Error: Mouse Click Event is too close to image edge. Please select an area further from edge.")
+            return
+
+
+        initial_size = (20, 20)  # initial size 20 x 20
+
+        bottom_left_corner = (x - 10, y - 10)  # x, y format  scene coordinates
+        pen = pg.mkPen(self.qcolors[len(self.LEEM_ROIS)], width=3)
+        roi = pg.RectROI(bottom_left_corner,
+                         size=initial_size,
+                         centered=True,
+                         snapSize=1.0,
+                         scaleSnap=True,
+                         translateSnap=True,
+                         pen=pen,
+                         movable=True,
+                         removable=True)
+        self.LEEM_ROIS.append(roi)
+        self.LEEMimageplotwidget.scene().addItem(roi)
+
+
+    def extractLEEMROI(self):
+        """Extract I(V) from one or more User selected ROIs."""
+        print("We did it, Reddit!")
 
     def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""
