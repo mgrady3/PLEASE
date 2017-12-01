@@ -179,6 +179,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
         LEEMMenu.addAction(self.toggleLEEMReflectivityAction)
 
+        self.enableLEEMROIAction = QtWidgets.QAction("Enable ROI Analysis", self)
+        self.enableLEEMROIAction.triggered.connect(self.viewer.enableLEEMROIAnalysis)
+        LEEMMenu.addAction(self.enableLEEMROIAction)
+
+        self.disableLEEMROIAction = QtWidgets.QAction("Disable ROI Analysis", self)
+        self.disableLEEMROIAction.triggered.connect(self.viewer.disableLEEMROIAnalysis)
+        LEEMMenu.addAction(self.disableLEEMROIAction)
+
         # LEED menu
         self.extractAction = QtWidgets.QAction("Extract I(V)", self)
         # extractAction.setShortcut("Ctrl-E")
@@ -1595,7 +1603,7 @@ class Viewer(QtWidgets.QWidget):
 
         self.sigmcLEEM.connect(self.handleLEEMLineProfile)
 
-        # move cropsshair away from image area
+        # move crosshair away from image area
         self.crosshair.vline.setPos(0)
         self.crosshair.hline.setPos(0)
 
@@ -1850,6 +1858,77 @@ class Viewer(QtWidgets.QWidget):
         pdi = pg.PlotDataItem(xdata, ydata, pen=pen)
         self.LEEMivplotwidget.getPlotItem().clear()
         self.LEEMivplotwidget.getPlotItem().addItem(pdi, clear=True)
+
+    def enableLEEMROIAnalysis(self):
+        """Enable analysis of LEEM-I(V) via built-in pyqtgraph ROI objects.
+        Disable I(V) extraction on mouse moved event
+        Disable I(V) popout on mouse click event
+        then setup new mouse click handle to add pyqtgraph ROI object to scene.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable mousemovement tracking
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok. Here we just want to disable the default mouse click behaviour
+            pass
+
+        # move crosshair away from image area
+        self.crosshair.vline.setPos(0)
+        self.crosshair.hline.setPos(0)
+
+        # remove any current LEEM clicks
+        self.LEEMclicks = 0
+        if self.LEEMcircs:
+            for circ in self.LEEMcircs:
+                self.LEEMimageplotwidget.scene().removeItem(circ)
+        self.LEEMcircs = []
+        self.LEEMselections = []
+        self.LEEMRectCount = 0
+        if self.LEEMRects:
+            for item in self.LEEMRects:
+                self.LEEMimageplotwidget.scene().removeItem(item[0])
+        self.LEEMRects = []
+
+        self.LEEM_ROIS = []
+
+        # connect new signal for mouse click events
+        self.sigmcLEEM.connect(self.addLEEMROI)
+
+    def disableLEEMROIAnalysis(self):
+        """Disable analysis of LEEM-I(V) via built-in pyqtgraph ROI objects.
+        Reset mouse event handles to track mouse movement and handle mouse click events.
+        """
+        try:
+            self.sigmmvLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse movement tracking handler
+            pass
+        try:
+            self.sigmcLEEM.disconnect()
+        except:
+            # If sigmvLEEM is not connected to anything, an exception is raised
+            # This is ok, and we can continue to reconnect this signal to the
+            # LEEM mouse click handler
+            pass
+
+        # clear all LEEM ROI objects
+        if self.LEEM_ROIS:
+            pass
+
+        self.sigmmvLEEM.connect(self.handleLEEMMouseMoved)
+        self.sigmcLEEM.connect(self.handleLEEMClick)
+
+    def addLEEMROI(self):
+        """Add ROI for I(V) analysis to current mouse position in LEEM scene."""
+        pass
 
     def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""

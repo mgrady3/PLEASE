@@ -10,6 +10,7 @@ Usage:
     python /path/to/main.py
     This will load the application and instantiate the GUI.
 """
+
 # Stdlib and Scientific Stack imports
 import os
 import sys
