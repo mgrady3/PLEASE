@@ -178,19 +178,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.extractLEEMLineProfileAction.setEnabled(self.viewer.LEEMLineProfileEnabled)
         lineprofileMenu.addAction(self.extractLEEMLineProfileAction)
 
-        ROIMenu = LEEMMenu.addMenu("ROI Analysis")
+        LEEMROIMenu = LEEMMenu.addMenu("ROI Analysis")
 
         self.enableLEEMROIAction = QtWidgets.QAction("Enable ROI Analysis", self)
         self.enableLEEMROIAction.triggered.connect(self.viewer.enableLEEMROIAnalysis)
-        ROIMenu.addAction(self.enableLEEMROIAction)
+        LEEMROIMenu.addAction(self.enableLEEMROIAction)
 
         self.disableLEEMROIAction = QtWidgets.QAction("Disable ROI Analysis", self)
         self.disableLEEMROIAction.triggered.connect(self.viewer.disableLEEMROIAnalysis)
-        ROIMenu.addAction(self.disableLEEMROIAction)
+        LEEMROIMenu.addAction(self.disableLEEMROIAction)
 
         self.extractLEEMROIAction = QtWidgets.QAction("Extract I(V) from ROIs", self)
         self.extractLEEMROIAction.triggered.connect(self.viewer.extractLEEMROI)
-        ROIMenu.addAction(self.extractLEEMROIAction)
+        LEEMROIMenu.addAction(self.extractLEEMROIAction)
 
         self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
@@ -220,6 +220,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.undoSelection = QtWidgets.QAction("Undo Selection", self)
         self.undoSelection.triggered.connect(self.viewer.undoLEEDSelection)
         LEEDMenu.addAction(self.undoSelection)
+
+        LEEDROIMenu = LEEDMenu.addMenu("ROI Analysis")
+
+        self.enableLEEDROIAction = QtWidgets.QAction("Enable ROI Analysis", self)
+        self.enableLEEDROIAction.triggered.connect(self.viewer.enableLEEDROIAnalysis)
+        LEEDROIMenu.addAction(self.enableLEEDROIAction)
+
+        self.disableLEEDROIAction = QtWidgets.QAction("Disable ROI Analysis", self)
+        self.disableLEEDROIAction.triggered.connect(self.viewer.disableLEEDROIAnalysis)
+        LEEDROIMenu.addAction(self.disableLEEDROIAction)
+
+        self.extractLEEDROIAction = QtWidgets.QAction("Extract I(V) from ROIs", self)
+        self.extractLEEDROIAction.triggered.connect(self.viewer.extractLEEDROI)
+        LEEDROIMenu.addAction(self.extractLEEDROIAction)
 
         self.toggleLEEDReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEDReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEED"))
@@ -286,6 +300,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDclickpos = []  # container for position of LEED clicks in array coordinate system
         self.boxrad = 20  # USER configurable setting for LEED integration window: 2*boxrad x 2*boxrad
         self.LEEM_ROIS = []  # container for pg.ROI objects used in I(V) analysis
+        self.LEED_ROIS = []  # container for pg.ROI objects used in I(V) analysis
 
         self.threads = []  # container for QThread objects used for outputting files
 
@@ -1917,7 +1932,17 @@ class Viewer(QtWidgets.QWidget):
         # enable menu action for extraction
         self.parentWidget().extractLEEMROIAction.setEnabled(True)
 
-
+        # reset ROI container
+        if self.LEEM_ROIS:
+            for item in self.LEEM_ROIS:
+                # manually removed ROI objects are set to None but retained in the list
+                if item:
+                    item.setEnabled(False)
+                    item.setVisible(False)
+                    try:
+                        self.LEEMimagewidget.scene().removeItem(item)
+                    except:
+                        print("Something is fishy regarding what scene maintains ownership of {}".format(item))
         self.LEEM_ROIS = []
 
         # connect new signal for mouse click events
@@ -1952,7 +1977,7 @@ class Viewer(QtWidgets.QWidget):
                     roi.setEnabled(False)
                     roi.setVisible(False)
                     self.LEEMimageplotwidget.scene().removeItem(roi)
-        self.LEEM_ROIs = []
+        self.LEEM_ROIS = []
 
         # disable menu action for extraction
         self.parentWidget().extractLEEMROIAction.setEnabled(False)
@@ -2413,6 +2438,154 @@ class Viewer(QtWidgets.QWidget):
             self.LEEDivplotwidget.plot(self.leeddat.elist,
                                        self.LEEDAverageIV,
                                        pen=pg.mkPen(self.qcolors[0], width=3))
+
+    def enableLEEDROIAnalysis(self):
+        """Enable extraction of I(V) curves using native pyqtgraph ROI objects."""
+        if not self.hasdisplayedLEEDdata:
+            return
+
+        # clear current I(V) data along with any visible QRectF objects from prior mouse click events
+        self.clearLEEDIV()
+
+        try:
+            self.sigmcLEED.disconnect()
+        except:
+            # if there are no slots connected, the attempt to disconnect will raise an exception.
+            # This is ok, as we just want to ensure nothing is connected.
+            pass
+        self.sigmcLEED.connect(self.addLEEDROI)
+
+        self.parentWidget().extractLEEDROIAction.setEnabled(True)
+
+        if self.LEED_ROIS:
+            for item in self.LEED_ROIS:
+                if item:
+                    item.setEnabled(False)
+                    item.setVisible(False)
+                    try:
+                        self.LEEDimagewidget.scene().removeItem(item)
+                    except:
+                        print("There's something fishy regarding which scene maintains ownership of {}".format(item))
+        self.LEED_ROIS = []
+
+    def disableLEEDROIAnalysis(self):
+        """Disable extraction of I(V) curves using native pyqtgraph ROI objects."""
+        if not self.hasdisplayedLEEDdata:
+            return
+
+        if self.LEED_ROIS:
+            for item in self.LEED_ROIS:
+                if item:
+                    item.setEnabled(False)
+                    item.setVisible(False)
+                    try:
+                        self.LEEDimagewidget.scene().removeItem(item)
+                    except:
+                        print("There's something fishy regarding which scene maintains ownership of {}".format(item))
+        self.LEED_ROIS = []
+
+        self.parentWidget().extractLEEDROIAction.setEnabled(False)
+
+        try:
+            self.sigmcLEED.disconnect()
+        except:
+            # if there are no slots connected, the attempt to disconnect will raise an exception.
+            # This is ok, as we just want to ensure nothing is connected.
+            pass
+
+        # reset previous signal/slot
+        self.sigmcLEED.connect(self.handleLEEDClick)
+
+
+
+    def extractLEEDROI(self):
+        """Extract I(V) from currently active ROIs."""
+        if not self.hasdisplayedLEEDdata or not self.LEED_ROIS:
+            return
+
+        self.LEEDivplotwidget.clear()
+
+        for idx, roi in enumerate(self.LEED_ROIS):
+            # removed ROIs appear in list as None objects
+            if roi:
+                pen = pg.mkPen(self.qcolors[idx], width=self.LEED_Linewidth)  # pen for I(V) plot; match color to ROI
+
+                # get intensity data from ROI region as 3D slice from self.leemdat.dat3d
+                average_ROI_intensity = []
+                for img in np.rollaxis(self.leeddat.dat3d, 2):
+                    img_slice = roi.getArrayRegion(img, self.LEEDimage)
+                    if len(img_slice.shape) != 2:
+                        print("Error: getArrayRegion() returned an array slice with dimension != 2.")
+                        return
+                    average_ROI_intensity.append(img_slice.sum() / (img_slice.shape[0] * img_slice.shape[1]))
+
+                # Handle time series data
+                if self.currentLEEDTime:
+                    xdata = self.leeddat.timelist
+                else:
+                    xdata = self.leeddat.elist
+                ydata = average_ROI_intensity
+
+                # enable this later if needed
+                """
+                if self.rescaleLEEDIntensity:
+                    ydata = [point/float(max(ydata)) for point in ydata]
+                """
+
+                # plot I(V) data
+                self.LEEDivplotwidget.plot(xdata,
+                                           ydata,
+                                           pen=pen)
+
+
+    def addLEEDROI(self, event):
+        """Add pyqtgraph ROI to current mouse location."""
+        if event.button() == 2:
+            return  # filter out right click events
+
+        if len(self.LEED_ROIS) >= len(self.qcolors):
+            print("Maximum number of simultaneous ROIs reached. Please clear one or more ROIs first.")
+            return
+
+        # create new circle ROI centered at mouse position
+        pos = event.pos()
+        mappedPos = self.LEEDimage.mapFromScene(pos)
+        xmapfs = int(mappedPos.x())  # array coordinates
+        ymapfs = int(mappedPos.y())  # array coordinates
+        x = pos.x()  # scene coordinates
+        y = pos.y()  # scene coordinates
+
+        if (xmapfs - 10 < 0 or
+            ymapfs - 10 < 0 or
+            xmapfs + 10 >= self.leeddat.dat3d.shape[1] or
+            ymapfs + 10 >= self.leeddat.dat3d.shape[0]):
+
+            print("Error: Mouse Click Event is too close to image edge. Please select an area further from edge.")
+            return
+
+        initial_size = (self.boxrad, self.boxrad)  # initial size 20 x 20
+
+        bottom_left_corner = (x - int(0.5*self.boxrad), y - int(0.5*self.boxrad))  # x, y format  scene coordinates
+        pen = pg.mkPen(self.qcolors[len(self.LEED_ROIS)], width=3)
+        roi = pg.CircleROI(bottom_left_corner,
+                           size=initial_size,
+                           snapSize=1.0,
+                           scaleSnap=False,
+                           translateSnap=True,
+                           pen=pen,
+                           movable=True,
+                           removable=True)
+        roi.sigRemoveRequested.connect(self.removeLEEDROI)
+        self.LEED_ROIS.append(roi)
+        self.LEEDimagewidget.scene().addItem(roi)
+
+    def removeLEEDROI(self, roi):
+        """Disable and then remove selected ROI from current scene."""
+        roi.setEnabled(False)
+        roi.setVisible(False)
+        self.LEEDimagewidget.scene().removeItem(roi)
+        self.LEED_ROIS[self.LEED_ROIS.index(roi)] = None
+
 
     def undoLEEDSelection(self):
         """Remove last User selection."""
