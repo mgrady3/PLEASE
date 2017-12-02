@@ -139,6 +139,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearLEEMAction.triggered.connect(self.viewer.clearLEEMIV)
         LEEMMenu.addAction(self.clearLEEMAction)
 
+        # Deprecated LEEM Window actions
+        """
         rectMenu = LEEMMenu.addMenu("Window Extraction")
         self.enableLEEMRectAction = QtWidgets.QAction("Enable LEEM Window Extraction", self)
         self.enableLEEMRectAction.triggered.connect(self.viewer.enableLEEMWindow)
@@ -156,6 +158,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.extractLEEMWindowAction.triggered.connect(self.viewer.extractLEEMWindows)
         self.extractLEEMWindowAction.setEnabled(self.viewer.LEEMRectWindowEnabled)
         rectMenu.addAction(self.extractLEEMWindowAction)
+        """
 
         lineprofileMenu = LEEMMenu.addMenu("Line Profile Analysis")
         self.enableLEEMLinesAction = QtWidgets.QAction("Enable LEEM Line Profile", self)
@@ -175,21 +178,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.extractLEEMLineProfileAction.setEnabled(self.viewer.LEEMLineProfileEnabled)
         lineprofileMenu.addAction(self.extractLEEMLineProfileAction)
 
+        ROIMenu = LEEMMenu.addMenu("ROI Analysis")
+
+        self.enableLEEMROIAction = QtWidgets.QAction("Enable ROI Analysis", self)
+        self.enableLEEMROIAction.triggered.connect(self.viewer.enableLEEMROIAnalysis)
+        ROIMenu.addAction(self.enableLEEMROIAction)
+
+        self.disableLEEMROIAction = QtWidgets.QAction("Disable ROI Analysis", self)
+        self.disableLEEMROIAction.triggered.connect(self.viewer.disableLEEMROIAnalysis)
+        ROIMenu.addAction(self.disableLEEMROIAction)
+
+        self.extractLEEMROIAction = QtWidgets.QAction("Extract I(V) from ROIs", self)
+        self.extractLEEMROIAction.triggered.connect(self.viewer.extractLEEMROI)
+        ROIMenu.addAction(self.extractLEEMROIAction)
+
         self.toggleLEEMReflectivityAction = QtWidgets.QAction("Toggle Reflectivty", self)
         self.toggleLEEMReflectivityAction.triggered.connect(lambda: self.viewer.toggleReflectivity(data="LEEM"))
         LEEMMenu.addAction(self.toggleLEEMReflectivityAction)
 
-        self.enableLEEMROIAction = QtWidgets.QAction("Enable ROI Analysis", self)
-        self.enableLEEMROIAction.triggered.connect(self.viewer.enableLEEMROIAnalysis)
-        LEEMMenu.addAction(self.enableLEEMROIAction)
 
-        self.disableLEEMROIAction = QtWidgets.QAction("Disable ROI Analysis", self)
-        self.disableLEEMROIAction.triggered.connect(self.viewer.disableLEEMROIAnalysis)
-        LEEMMenu.addAction(self.disableLEEMROIAction)
 
-        self.extractLEEMROIAction = QtWidgets.QAction("Extract I(V) from ROIs", self)
-        self.extractLEEMROIAction.triggered.connect(self.viewer.extractLEEMROI)
-        LEEMMenu.addAction(self.extractLEEMROIAction)
 
         # LEED menu
         self.extractAction = QtWidgets.QAction("Extract I(V)", self)
@@ -277,6 +285,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEDclicks = 0
         self.LEEDclickpos = []  # container for position of LEED clicks in array coordinate system
         self.boxrad = 20  # USER configurable setting for LEED integration window: 2*boxrad x 2*boxrad
+        self.LEEM_ROIS = []  # container for pg.ROI objects used in I(V) analysis
 
         self.threads = []  # container for QThread objects used for outputting files
 
@@ -1902,6 +1911,9 @@ class Viewer(QtWidgets.QWidget):
                 self.LEEMimageplotwidget.scene().removeItem(item[0])
         self.LEEMRects = []
 
+        # clear I(V) plot
+        self.LEEMivplotwidget.clear()
+
         # enable menu action for extraction
         self.parentWidget().extractLEEMROIAction.setEnabled(True)
 
@@ -1935,7 +1947,12 @@ class Viewer(QtWidgets.QWidget):
 
         # clear all LEEM ROI objects
         if self.LEEM_ROIS:
-            pass
+            for roi in self.LEEM_ROIS:
+                if roi:
+                    roi.setEnabled(False)
+                    roi.setVisible(False)
+                    self.LEEMimageplotwidget.scene().removeItem(roi)
+        self.LEEM_ROIs = []
 
         # disable menu action for extraction
         self.parentWidget().extractLEEMROIAction.setEnabled(False)
@@ -1970,26 +1987,69 @@ class Viewer(QtWidgets.QWidget):
             return
 
 
-        initial_size = (20, 20)  # initial size 20 x 20
+        initial_size = (self.boxrad, self.boxrad)  # initial size 20 x 20
 
-        bottom_left_corner = (x - 10, y - 10)  # x, y format  scene coordinates
+        bottom_left_corner = (x - int(0.5*self.boxrad), y - int(0.5*self.boxrad))  # x, y format  scene coordinates
         pen = pg.mkPen(self.qcolors[len(self.LEEM_ROIS)], width=3)
         roi = pg.RectROI(bottom_left_corner,
                          size=initial_size,
                          centered=True,
                          snapSize=1.0,
-                         scaleSnap=True,
+                         scaleSnap=False,
                          translateSnap=True,
                          pen=pen,
                          movable=True,
                          removable=True)
+        roi.sigRemoveRequested.connect(self.removeLEEMROI)
         self.LEEM_ROIS.append(roi)
         self.LEEMimageplotwidget.scene().addItem(roi)
+
+    def removeLEEMROI(self, roi):
+        """Use ROI.sigRemoveRequested to remove ROI object from scene."""
+        # self.LEEMimageplotwidget.scene().removeItem(roi)
+        roi.setEnabled(False)
+        roi.setVisible(False)
+        self.LEEMimageplotwidget.scene().removeItem(roi)
+        self.LEEM_ROIS[self.LEEM_ROIS.index(roi)] = None
+
 
 
     def extractLEEMROI(self):
         """Extract I(V) from one or more User selected ROIs."""
-        print("We did it, Reddit!")
+        if not self.LEEM_ROIS or not self.hasdisplayedLEEMdata:
+            return
+
+        # Clear previous plot data
+        self.LEEMivplotwidget.clear()
+
+        for idx, roi in enumerate(self.LEEM_ROIS):
+            # removed ROIs appear in list as None objects
+            if roi:
+                pen = pg.mkPen(self.qcolors[idx], width=self.LEEM_Linewidth)  # pen for I(V) plot; match color to ROI
+
+                # get intensity data from ROI region as 3D slice from self.leemdat.dat3d
+                average_ROI_intensity = []
+                for img in np.rollaxis(self.leemdat.dat3d, 2):
+                    img_slice = roi.getArrayRegion(img, self.LEEMimage)
+                    if len(img_slice.shape) != 2:
+                        print("Error: getArrayRegion() returned an array slice with dimension != 2.")
+                        return
+                    average_ROI_intensity.append(img_slice.sum() / (img_slice.shape[0] * img_slice.shape[1]))
+
+                # Handle time series data
+                if self.currentLEEMTime:
+                    xdata = self.leemdat.timelist
+                else:
+                    xdata = self.leemdat.elist
+                ydata = average_ROI_intensity
+                if self.rescaleLEEMIntensity:
+                    ydata = [point/float(max(ydata)) for point in ydata]
+
+                # plot I(V) data
+                self.LEEMivplotwidget.plot(xdata,
+                                           ydata,
+                                           pen=pen)
+
 
     def handleLEEDClick(self, event):
         """User click registered in LEEDimage area."""
