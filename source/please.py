@@ -1965,7 +1965,7 @@ class Viewer(QtWidgets.QWidget):
         try:
             self.sigmcLEEM.disconnect()
         except:
-            # If sigmvLEEM is not connected to anything, an exception is raised
+            # If sigmcLEEM is not connected to anything, an exception is raised
             # This is ok, and we can continue to reconnect this signal to the
             # LEEM mouse click handler
             pass
@@ -2055,7 +2055,8 @@ class Viewer(QtWidgets.QWidget):
                 # get intensity data from ROI region as 3D slice from self.leemdat.dat3d
                 average_ROI_intensity = []
                 for img in np.rollaxis(self.leemdat.dat3d, 2):
-                    img_slice = roi.getArrayRegion(img, self.LEEMimage)
+                    # Flip array to match QGraphicsView orientation
+                    img_slice = roi.getArrayRegion(img[::-1, :].T, self.LEEMimage)
                     if len(img_slice.shape) != 2:
                         print("Error: getArrayRegion() returned an array slice with dimension != 2.")
                         return
@@ -2513,7 +2514,8 @@ class Viewer(QtWidgets.QWidget):
                 # get intensity data from ROI region as 3D slice from self.leemdat.dat3d
                 average_ROI_intensity = []
                 for img in np.rollaxis(self.leeddat.dat3d, 2):
-                    img_slice = roi.getArrayRegion(img, self.LEEDimage)
+                    # Flip array to match QGraphicsView orientation
+                    img_slice = roi.getArrayRegion(img[::-1, :].T, self.LEEDimage)
                     if len(img_slice.shape) != 2:
                         print("Error: getArrayRegion() returned an array slice with dimension != 2.")
                         return
