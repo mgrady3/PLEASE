@@ -2037,6 +2037,28 @@ class Viewer(QtWidgets.QWidget):
         self.LEEMimageplotwidget.scene().removeItem(roi)
         self.LEEM_ROIS[self.LEEM_ROIS.index(roi)] = None
 
+    @QtCore.pyqtSlot(object)
+    def retrieveExtractedIV(self, data):
+        """Grab tuple output from QThread (index, IV_list)"""
+        idx, ilist = data
+        self.plotExtractedLEEMIV(idx, ilist)
+
+    def plotExtractedLEEMIV(self, idx, ydata):
+        """After retrieving extracted IV from QThread, plot with color coordination."""
+        pen = pg.mkPen(self.qcolors[idx], width=self.LEEM_Linewidth)  # pen for I(V) plot; match color to ROI
+
+        # Handle time series data
+        if self.currentLEEMTime:
+            xdata = self.leemdat.timelist
+        else:
+            xdata = self.leemdat.elist
+
+        if self.rescaleLEEMIntensity:
+            ydata = [point/float(max(ydata)) for point in ydata]
+
+        self.LEEMivplotwidget.plot(xdata,
+                                   ydata,
+                                   pen=pen)
 
 
     def extractLEEMROI(self):
@@ -2047,6 +2069,23 @@ class Viewer(QtWidgets.QWidget):
         # Clear previous plot data
         self.LEEMivplotwidget.clear()
 
+        # new method - multithread extraction so main UI is not blocked
+        self.extract_threads = []
+        for idx, roi in enumerate(self.LEEM_ROIS):
+            if roi:
+                pen = pg.mkPen(self.qcolors[idx], width=self.LEEM_Linewidth)  # pen for I(V) plot; match color to ROI
+                thread = WorkerThread(task="EXTRACT_IV_ROI",
+                                      roi=roi,
+                                      dat3d=self.leemdat.dat3d,
+                                      plot_img=self.LEEMimage,
+                                      idx=idx)
+                thread.IVOutput.connect(self.retrieveExtractedIV)
+                thread.finished.connect(lambda: print("Finished ROI I(V) extraction!"))
+                self.extract_threads.append(thread)
+                thread.start()
+
+        """
+        # old method - single thread extraction
         for idx, roi in enumerate(self.LEEM_ROIS):
             # removed ROIs appear in list as None objects
             if roi:
@@ -2075,6 +2114,8 @@ class Viewer(QtWidgets.QWidget):
                 self.LEEMivplotwidget.plot(xdata,
                                            ydata,
                                            pen=pen)
+        """
+        return
 
 
     def handleLEEDClick(self, event):

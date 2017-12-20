@@ -19,6 +19,7 @@ Common tasks for the worker thread will be:
 import os
 import LEEMFUNCTIONS as LF
 import numpy as np
+import pyqtgraph as pg
 from configinfo import output_environment_config
 from experiment import Experiment
 from PyQt5 import QtCore
@@ -33,6 +34,7 @@ class WorkerThread(QtCore.QThread):
     done = QtCore.pyqtSignal()
     outputSIGNAL = QtCore.pyqtSignal(np.ndarray)
     yamlFileOutput = QtCore.pyqtSignal(bool)
+    IVOutput = QtCore.pyqtSignal(object)  # tuple
 
     def __init__(self, task=None, **kwargs):
         """Initialize QThread with required parameters.
@@ -59,7 +61,9 @@ class WorkerThread(QtCore.QThread):
         # path refers to input data path
         # output data path is labeled as outpath
         self.valid_keys = ['path', 'data', 'ilist', 'elist',
-                           'imht', 'imwd', 'name', 'bits', 'ext', 'byte', 'outpath', 'files', 'settings']
+                           'imht', 'imwd', 'name', 'bits', 'ext',
+                           'byte', 'outpath', 'files', 'settings',
+                           'roi', 'plot_img', 'dat3d', 'idx']
         for key in self.params.keys():
             if key not in self.valid_keys:
                 print('Terminating - ERROR Invalid Task Parameter: {}'.format(key))
@@ -132,6 +136,11 @@ class WorkerThread(QtCore.QThread):
 
         elif self.task == 'GEN_CONFIG_INFO':
             self.outputConfigInfo()
+            self.quit()
+            self.exit()
+
+        elif self.task == 'EXTRACT_IV_ROI':
+            self.extractIV()
             self.quit()
             self.exit()
 
@@ -391,3 +400,32 @@ class WorkerThread(QtCore.QThread):
         Experiment.toFile(settings)
         self.yamlFileOutput.emit(True)
         return
+
+    def extractIV(self):
+        """Extract I(V) from ROI."""
+        # requires:
+        # roi - pyqtgraph roi object
+        # dat3d - numpy 3d array
+        # img - current image with ROI object in view (will be Viewer.LEEMimage or Viewer.LEEDimage)
+        # idx - integer used for keeping colors coordinated
+
+        reqs = ['roi', 'dat3d', 'plot_img', 'idx']
+        for req in reqs:
+            if req not in self.params.keys():
+                print("Error: Required Parameter {} is missing from call to gen_Dat_Files() ...".format(req))
+                return
+        roi = self.params['roi']
+        dat3d = self.params['dat3d']
+        plot_img = self.params['plot_img']
+        idx = self.params['idx']
+
+        average_ROI_intensity = []
+        print("Beginning ROI I(V) extraction ...")
+        for img in np.rollaxis(dat3d, 2):
+            # Flip array to match QGraphicsView orientation
+            img_slice = roi.getArrayRegion(img[::-1, :].T, plot_img)
+            if len(img_slice.shape) != 2:
+                print("Error: getArrayRegion() returned an array slice with dimension != 2.")
+                return
+            average_ROI_intensity.append(img_slice.sum() / (img_slice.shape[0] * img_slice.shape[1]))
+        self.IVOutput.emit((idx, average_ROI_intensity))
