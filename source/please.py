@@ -2038,7 +2038,7 @@ class Viewer(QtWidgets.QWidget):
         self.LEEM_ROIS[self.LEEM_ROIS.index(roi)] = None
 
     @QtCore.pyqtSlot(object)
-    def retrieveExtractedIV(self, data):
+    def retrieveExtractedLEEMIV(self, data):
         """Grab tuple output from QThread (index, IV_list)"""
         idx, ilist = data
         self.plotExtractedLEEMIV(idx, ilist)
@@ -2079,7 +2079,7 @@ class Viewer(QtWidgets.QWidget):
                                       dat3d=self.leemdat.dat3d,
                                       plot_img=self.LEEMimage,
                                       idx=idx)
-                thread.IVOutput.connect(self.retrieveExtractedIV)
+                thread.IVOutput.connect(self.retrieveExtractedLEEMIV)
                 thread.finished.connect(lambda: print("Finished ROI I(V) extraction!"))
                 self.extract_threads.append(thread)
                 thread.start()
@@ -2538,7 +2538,23 @@ class Viewer(QtWidgets.QWidget):
         # reset previous signal/slot
         self.sigmcLEED.connect(self.handleLEEDClick)
 
+    @QtCore.pyqtSlot(object)
+    def retrieveExtractedLEEDIV(self, data):
+        """Grab tuple output from QThread (index, IV_list)"""
+        idx, ilist = data
+        self.plotExtractedLEEDIV(idx, ilist)
 
+    def plotExtractedLEEDIV(self, idx, ydata):
+        pen = pg.mkPen(self.qcolors[idx],
+                       width=self.LEED_Linewidth)
+        if self.currentLEEDTime:
+            xdata = self.leeddat.timelist
+        else:
+            xdata = self.leeddat.elist
+
+        self.LEEDivplotwidget.plot(xdata,
+                                   ydata,
+                                   pen=pen)
 
     def extractLEEDROI(self):
         """Extract I(V) from currently active ROIs."""
@@ -2546,6 +2562,23 @@ class Viewer(QtWidgets.QWidget):
             return
 
         self.LEEDivplotwidget.clear()
+        self.extract_threads = []
+        for idx, roi in enumerate(self.LEED_ROIS):
+            if roi:
+                pen = pg.mkPen(self.qcolors[idx], width=self.LEEM_Linewidth)  # pen for I(V) plot; match color to ROI
+                thread = WorkerThread(task="EXTRACT_IV_ROI",
+                                      roi=roi,
+                                      dat3d=self.leeddat.dat3d,
+                                      plot_img=self.LEEDimage,
+                                      idx=idx)
+                thread.IVOutput.connect(self.retrieveExtractedLEEDIV)
+                thread.finished.connect(lambda: print("Finished ROI I(V) extraction!"))
+                self.extract_threads.append(thread)
+                thread.start()
+
+
+        """
+        # old method -single thread extraction
 
         for idx, roi in enumerate(self.LEED_ROIS):
             # removed ROIs appear in list as None objects
@@ -2570,15 +2603,16 @@ class Viewer(QtWidgets.QWidget):
                 ydata = average_ROI_intensity
 
                 # enable this later if needed
-                """
+
                 if self.rescaleLEEDIntensity:
                     ydata = [point/float(max(ydata)) for point in ydata]
-                """
+
 
                 # plot I(V) data
                 self.LEEDivplotwidget.plot(xdata,
                                            ydata,
                                            pen=pen)
+                """
 
 
     def addLEEDROI(self, event):

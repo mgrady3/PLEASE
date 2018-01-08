@@ -412,7 +412,7 @@ class WorkerThread(QtCore.QThread):
         reqs = ['roi', 'dat3d', 'plot_img', 'idx']
         for req in reqs:
             if req not in self.params.keys():
-                print("Error: Required Parameter {} is missing from call to gen_Dat_Files() ...".format(req))
+                print("Error: Required Parameter {} is missing from call to extractIV() ...".format(req))
                 return
         roi = self.params['roi']
         dat3d = self.params['dat3d']
