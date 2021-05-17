@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "please"
+version = "2.0.0"
+description = "PLEASE: the Python Low-energy Electron Analysis SuitE - enabling rapid analysis and visualization of LEEM and LEED data."
+authors = ["Maxwell Grady"]
+license = "GPL-3.0"
+
+[tool.poetry.dependencies]
+python = ">=3.7,<3.10"
+numpy = "^1.20.3"
+scipy = "^1.6.3"
+Pillow = "^8.2.0"
+PyQt6 = "^6.1.0"
+PyYAML = "^5.4.1"
+pyqtgraph = "^0.12.1"
+pendulum = "^2.1.2"
+
+[tool.poetry.dev-dependencies]
+ipython = "^7.23.1"
+jupyter = "^1.0.0"
+notebook = "^6.3.0"
+isort = "^5.8.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
