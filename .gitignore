@@ -21,10 +21,12 @@ datapath.txt
 # IDE files #
 #############
 .idea
+.vscode/
 
 # Build/Deploy files #
 ######################
 ./test-deploy/
+dist/
 
 # Pycache in source#
 ./source/__pycache__/
