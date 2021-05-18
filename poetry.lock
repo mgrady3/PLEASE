@@ -828,6 +828,19 @@ ipython-genutils = "*"
 test = ["pytest"]
 
 [[package]]
+name = "traits"
+version = "6.2.0"
+description = "Observable typed attributes for Python classes"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+docs = ["enthought-sphinx-theme", "Sphinx (>=2.1.0,!=3.2.0)"]
+examples = ["numpy", "pillow"]
+test = ["cython", "flake8", "flake8-ets", "mypy", "numpy", "pyface", "pyside2", "setuptools", "Sphinx (>=2.1.0,!=3.2.0)", "traitsui"]
+
+[[package]]
 name = "typing-extensions"
 version = "3.10.0.0"
 description = "Backported and Experimental Type Hints for Python 3.5+"
@@ -877,7 +890,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.10"
-content-hash = "99888dad1bf80d99797a842e61185746119ef06cd91085da88c11c74eb8af677"
+content-hash = "381b4071ed07935d6c498912660ddb723511b0473f3bdf4a063129ad76526b86"
 
 [metadata.files]
 appnope = [
@@ -1452,6 +1465,29 @@ tornado = [
 traitlets = [
     {file = "traitlets-5.0.5-py3-none-any.whl", hash = "sha256:69ff3f9d5351f31a7ad80443c2674b7099df13cc41fc5fa6e2f6d3b0330b0426"},
     {file = "traitlets-5.0.5.tar.gz", hash = "sha256:178f4ce988f69189f7e523337a3e11d91c786ded9360174a3d9ca83e79bc5396"},
+]
+traits = [
+    {file = "traits-6.2.0-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:7f5569ae105e9b6814027143f0f863a9ae92513f71cef509dab39709ca3f1503"},
+    {file = "traits-6.2.0-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:0a27b4a836907b893b747c16bd6395d85e31d145e4464183b1eb8a281294165e"},
+    {file = "traits-6.2.0-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:9fb6c7bdb95e7750a8a5c3ff09f5b51db0306a2fea5d108ecfdb800756fc6a6e"},
+    {file = "traits-6.2.0-cp36-cp36m-win32.whl", hash = "sha256:e6a59af6da6f2bb8326d548be7f3f36d923134fa76b8ce99569cc0444b40b936"},
+    {file = "traits-6.2.0-cp36-cp36m-win_amd64.whl", hash = "sha256:edb475bee3c84e90c198d1fbbaed8de74caf75327907b8df79246dcdef96db88"},
+    {file = "traits-6.2.0-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:157b47dd3d1b5855c17f7e5fa5bdc76b553f26e8e671625128beb1d11c546f7c"},
+    {file = "traits-6.2.0-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:2d68f6713f4cf53ff5db7f9670764682f8ed4cb79661b82506f268e1cd4e76e4"},
+    {file = "traits-6.2.0-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:2934ce9c02d233d04cffd97d166f832da526a881f49989237c43d2a65e715095"},
+    {file = "traits-6.2.0-cp37-cp37m-win32.whl", hash = "sha256:a600c53ecbcd0fcc7942d21218e2eeb232d20db466bbb0fd04f4ac3a9134ea9e"},
+    {file = "traits-6.2.0-cp37-cp37m-win_amd64.whl", hash = "sha256:3c2e3fdc8f9b50055a6793e98f402ff79386ac0a0b1db50f662df54b5331d182"},
+    {file = "traits-6.2.0-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:8b5f6df6ce01ed9d12cab53b33fdfee52af220e7be55a2614764d7d889bed510"},
+    {file = "traits-6.2.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:f42dd271169a6354ddbe1dc7b907a893a22ef594f9670dcb35b13979b6141804"},
+    {file = "traits-6.2.0-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:5e161352cf1fea7248f09e68bbb8c8ca6996482c8657f83da19a9e461829b0c3"},
+    {file = "traits-6.2.0-cp38-cp38-win32.whl", hash = "sha256:1077a97cb2f89a713b2bafd6d7800b2e623629e742e35bad96fd0d808b7011cd"},
+    {file = "traits-6.2.0-cp38-cp38-win_amd64.whl", hash = "sha256:9caf7edcde0d000c96971a719091f69d5f00fd6f04d9515f6b7ed20342b9032d"},
+    {file = "traits-6.2.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:71e78dec4ffe1ae0073fa1d96983a9a0fa43249f679c1cb8e3354d4ed6cd4d7c"},
+    {file = "traits-6.2.0-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:ad91cf6f8c5452febbc0087b6dd2c20581bdce695f52619826df9b345a02324b"},
+    {file = "traits-6.2.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:7e080c5916d99bd9980a30cd6b4798c7b966d98f090c907dbf243cf5b3548899"},
+    {file = "traits-6.2.0-cp39-cp39-win32.whl", hash = "sha256:9788017f02ba194591db84fce28eb83fbd910dd784cb98ae558c3305c9702914"},
+    {file = "traits-6.2.0-cp39-cp39-win_amd64.whl", hash = "sha256:6d8bad9e61a6c7eb282d6d60c6158fbfe9b22c6857a793affdf8b75a50fcd373"},
+    {file = "traits-6.2.0.tar.gz", hash = "sha256:16fa1518b0778fd53bf0547e6a562b1787bf68c8f6b7995a13bd1902529fdb0c"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.10.0.0-py2-none-any.whl", hash = "sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497"},
