@@ -6,7 +6,7 @@ from traits.api import (
     ABCHasStrictTraits, Array, Enum, Int, Property, Str, Tuple,
 )
 
-from .constants import (
+from please.constants import (
     ENDIAN_STRINGS, EXTERNAL_PARAMETERS, SUPPORTED_DATA_TYPES,
     SUPPORTED_EXPERIMENT_TYPES,
 )
