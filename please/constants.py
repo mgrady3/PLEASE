@@ -18,6 +18,10 @@ SUPPORTED_IMAGE_FORMATS = {
     'TIFF',
 }
 
+SUPPORTED_RAW_FORMATS = {
+    'DAT',
+}
+
 ENDIAN_STRINGS = {
     'L',  # Little-endian data
     'M',  # Big-endian data
