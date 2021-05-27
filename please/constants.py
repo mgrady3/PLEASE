@@ -32,3 +32,5 @@ EXTERNAL_PARAMETERS = {
     'Temperature',
     'Time'
 }
+
+BITS_PER_BYTE = 8
