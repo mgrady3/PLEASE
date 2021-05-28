@@ -2,14 +2,14 @@
 
 import os
 import pkg_resources
-import unittest
+from unittest import TestCase
 
 import numpy as np
 
 from please.io.readers import read_image_data, read_raw_data, _get_dtype_string
 
 
-class TestImageFileIO(unittest.TestCase):
+class TestImageFileIO(TestCase):
 
     @classmethod
     def setUpClass(cls):
