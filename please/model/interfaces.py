@@ -27,6 +27,9 @@ class IEMImage(ABCHasStrictTraits):
     #: Numpy-like Array of Image data with shape (height, width)
     data = Array(shape=(None, None))
 
+    #: String indicating the type of data this image represents
+    image_type = Enum('LEEM', SUPPORTED_EXPERIMENT_TYPES)
+
     def _get_shape(self):
         """ Get the image shape in (height, width) format. """
         return self.data.shape

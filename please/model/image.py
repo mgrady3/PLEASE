@@ -4,18 +4,17 @@ LEEM/LEED data.
 """
 
 from .interfaces import IEMImage
-from please.io.readers import read_image_data
 
 
-class EMImage(IEMImage):
-    @classmethod
-    def from_file(cls, path):
-        """ Get an EMImage from file
+class LEEMImage(IEMImage):
 
-        Parameters
-        ----------
-        path : str
-            String indicating the absolute path to data file to load image
-            data from
-        """
-        return cls(data=read_image_data(path))
+    def __init__(self, **traits):
+        super().__init__(**traits)
+        self.image_type = 'LEEM'
+
+
+class LEEDImage(IEMImage):
+
+    def __init__(self, **traits):
+        super().__init__(**traits)
+        self.image_type = 'LEED'
