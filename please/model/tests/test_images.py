@@ -6,6 +6,7 @@ import numpy as np
 
 from please.model.image import LEEDImage, LEEMImage
 
+
 class TestIEMImage(TestCase):
 
     def setUp(self):

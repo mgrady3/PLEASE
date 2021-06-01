@@ -22,7 +22,6 @@ class TestImageFileIO(TestCase):
             os.path.join('data', '20141023_01_100.png')
         )
 
-
     def test__get_dtype_string(self):
         # Given
         bits = 8
@@ -126,7 +125,7 @@ class TestImageFileIO(TestCase):
         expected_error = " Image parameters do not match the data file."
         # When
         with self.assertRaises(ValueError) as ctx:
-            data = read_raw_data(
+            read_raw_data(
                 self.raw_data_file,
                 height=height,
                 width=width,

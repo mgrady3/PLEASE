@@ -6,6 +6,7 @@ from unittest import TestCase
 
 from please.io.utils import get_file_extension, is_image_file, is_raw_file
 
+
 class TestIOUtils(TestCase):
 
     @classmethod

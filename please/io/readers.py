@@ -13,7 +13,6 @@ from please.constants import BITS_PER_BYTE
 from please.exceptions import UnsupportedDataType
 
 
-
 def read_image_data(file_path: str) -> np.ndarray:
     """ Generate a 2d numpy of image data from an image file
 
@@ -33,10 +32,10 @@ def read_image_data(file_path: str) -> np.ndarray:
             ext = ext.split('.')[1].upper()
         except IndexError:
             pass
-    if not ext in SUPPORTED_IMAGE_FORMATS:
+    if ext not in SUPPORTED_IMAGE_FORMATS:
         raise UnsupportedDataType(
-            f'The file, {file_path}, could not be loaded because the data format'
-            ' is not supported.'
+            f'The file, {file_path}, could not be loaded because the data'
+            ' format is not supported.'
         )
 
     return np.array(Image.open(file_path).convert('L'))
@@ -48,7 +47,7 @@ def read_raw_data(
         width: int,
         bits_per_pixel: int,
         byteorder: str
-    ) -> np.ndarray:
+) -> np.ndarray:
     """ Generate a 2d numpy of image data from a raw data (.dat) file
 
     Parameters
@@ -80,10 +79,10 @@ def read_raw_data(
             ext = ext.split('.')[1].upper()
         except IndexError:
             pass
-    if not ext in SUPPORTED_RAW_FORMATS:
+    if ext not in SUPPORTED_RAW_FORMATS:
         raise UnsupportedDataType(
-            f'The file, {file_path}, could not be loaded because the data format'
-            ' is not supported.'
+            f'The file, {file_path}, could not be loaded because the data'
+            ' format is not supported.'
         )
 
     # Extract the image data from the file contents

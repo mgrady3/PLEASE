@@ -6,6 +6,7 @@ import pathlib
 
 from please.constants import SUPPORTED_IMAGE_FORMATS, SUPPORTED_RAW_FORMATS
 
+
 def get_file_extension(path: str) -> str:
     """ Get the extension of an image/data file
 
@@ -26,6 +27,7 @@ def is_image_file(path: str) -> bool:
     """ Is the file at the specified path a supported image type? """
     ext = get_file_extension(path).upper()
     return ext.strip('.') in SUPPORTED_IMAGE_FORMATS
+
 
 def is_raw_file(path: str) -> bool:
     """ Is the file at the specified path a supported raw data type? """
