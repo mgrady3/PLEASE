@@ -6,7 +6,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from please.io.readers import read_image_data, read_raw_data, _get_dtype_string
+from please.io.readers import read_image_data, read_raw_data
 
 
 class TestImageFileIO(TestCase):
@@ -21,68 +21,6 @@ class TestImageFileIO(TestCase):
             'please.io.tests',
             os.path.join('data', '20141023_01_100.png')
         )
-
-    def test__get_dtype_string(self):
-        # Given
-        bits = 8
-        byteorder = 'L'
-        expected = '<u1'
-
-        # When
-        format_string = _get_dtype_string(bits, byteorder)
-
-        # Then
-        self.assertEqual(format_string, expected)
-
-        # Given
-        bits = 8
-        byteorder = 'B'
-        expected = '>u1'
-
-        # When
-        format_string = _get_dtype_string(bits, byteorder)
-
-        # Then
-        self.assertEqual(format_string, expected)
-
-        # Given
-        bits = 16
-        byteorder = 'L'
-        expected = '<u2'
-
-        # When
-        format_string = _get_dtype_string(bits, byteorder)
-
-        # Then
-        self.assertEqual(format_string, expected)
-
-        # Given
-        bits = 16
-        byteorder = 'B'
-        expected = '>u2'
-
-        # When
-        format_string = _get_dtype_string(bits, byteorder)
-
-        # Then
-        self.assertEqual(format_string, expected)
-
-    def test__get_dtype_string_raises_value_error(self):
-        # Given
-        bits = 32
-        byteorder = 'L'
-
-        # When
-        with self.assertRaisesRegex(ValueError, 'Unsupported bit size'):
-            _get_dtype_string(bits, byteorder)
-
-        # Given
-        bits = 16
-        byteorder = 'ABC123'
-
-        # When
-        with self.assertRaisesRegex(ValueError, 'Unsupported byteorder'):
-            _get_dtype_string(bits, byteorder)
 
     def test_read_image_data(self):
         # Given

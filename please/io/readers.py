@@ -2,6 +2,7 @@
 such as raw .dat files as well as common image types like TIFF and PNG.
 """
 import pathlib
+import struct
 
 import numpy as np
 from PIL import Image
@@ -11,6 +12,12 @@ from please.constants import (
 )
 from please.constants import BITS_PER_BYTE
 from please.exceptions import UnsupportedDataType
+from please.io.utils import get_dtype_string, is_uview
+
+# UView Header in Bytes
+UK_ID_LEN = 20
+UK_SIZE_LEN = 2
+UK_VERSION_LEN = 2
 
 
 def read_image_data(file_path: str) -> np.ndarray:
@@ -55,6 +62,20 @@ def read_raw_data(
     file_path : str
         Path to the data file to read into a numpy array
 
+    height : int
+        Image height in pixels
+
+    width : int
+        Image width in pixels
+
+    bits_per_pixel : int
+        Number of bits of file data for each pixel
+
+    byteorder : str
+        String indicating the byte ordering of the data, 'L' for little endian
+        or 'B' for big endian. Generally files will be 'L', however, some
+        outliers will be 'B'.
+
     Returns
     -------
     data : NDArray
@@ -98,30 +119,45 @@ def read_raw_data(
             " Image parameters do not match the data file."
         )
     image_data = file_data[header_length_in_bytes:]
-    format_string = _get_dtype_string(bits_per_pixel, byteorder)
+    format_string = get_dtype_string(bits_per_pixel, byteorder)
     return np.frombuffer(image_data, format_string).reshape((height, width))
 
 
-def _get_dtype_string(bits: int, byteorder: str) -> str:
-    """ Generate a numpy compatable string indicating the array dtype
+def read_uview(file_path: str) -> np.ndarray:
+    """ Attempt to read a UView (UKSOFT2001) image data file into a 2D numpy
+    array containing the image contents by parsing the file header using
+    known structure of the header contents
 
     Parameters
     ----------
-    bits : int
-        Number of bits per pixel in the image data
-
-    byteorder: str
-        String indicating endianness, "L" for little-endian, "B" for big.
+    file_path : str
+        Path to the file to read into an array
 
     Returns
     -------
-    format_string : str
-        numpy compatable dtype string for formatting image data
+    2D numpy array containing raw image data
+
+    Raises
+    ------
+    UnsupportedDataType
+
+    Notes
+    -----
+    This function performs a "smart" parse of the file based on quasi known
+    structure of the file header. Various versions of UView have slightly
+    differing header contents. Here only a minimal set of required data is
+    parsed from the header to avoid more complex parsing based on different
+    versions.
     """
-    if bits not in {8, 16}:
-        raise ValueError(f"Unsupported bit size: {bits}.")
-    if byteorder not in {'L', 'B'}:
-        raise ValueError(f"Unsupported byteorder: {byteorder}.")
-    endian = '<' if byteorder == 'L' else '>'
-    bitstring = 'u1' if bits == 8 else 'u2'
-    return endian + bitstring
+    if not is_uview(file_path):
+        raise UnsupportedDataType(
+            f"The file, {file_path} is not a valid UView data file."
+        )
+    with open(file_path, 'rb') as f:
+        try:
+            uk_id = struct.unpack(f'{UK_ID_LEN}s', f.read(UK_ID_LEN))[0]
+            uk_size = struct.unpack('h', f.read(UK_SIZE_LEN))[0]
+            uk_version = struct.unpack('h', f.read(UK_VERSION_LEN))[0]
+        except struct.error:
+            raise UnsupportedDataType("Could not read UView header.")
+

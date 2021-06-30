@@ -4,7 +4,9 @@ import os
 import pkg_resources
 from unittest import TestCase
 
-from please.io.utils import get_file_extension, is_image_file, is_raw_file
+from please.io.utils import (
+    get_dtype_string, get_file_extension, is_image_file, is_raw_file
+)
 
 
 class TestIOUtils(TestCase):
@@ -60,3 +62,65 @@ class TestIOUtils(TestCase):
         self.assertTrue(is_raw_file(self.raw_data_file))
         self.assertFalse(is_raw_file(self.img_file))
         self.assertFalse(is_raw_file(self.no_extension))
+
+    def test_get_dtype_string(self):
+        # Given
+        bits = 8
+        byteorder = 'L'
+        expected = '<u1'
+
+        # When
+        format_string = get_dtype_string(bits, byteorder)
+
+        # Then
+        self.assertEqual(format_string, expected)
+
+        # Given
+        bits = 8
+        byteorder = 'B'
+        expected = '>u1'
+
+        # When
+        format_string = get_dtype_string(bits, byteorder)
+
+        # Then
+        self.assertEqual(format_string, expected)
+
+        # Given
+        bits = 16
+        byteorder = 'L'
+        expected = '<u2'
+
+        # When
+        format_string = get_dtype_string(bits, byteorder)
+
+        # Then
+        self.assertEqual(format_string, expected)
+
+        # Given
+        bits = 16
+        byteorder = 'B'
+        expected = '>u2'
+
+        # When
+        format_string = get_dtype_string(bits, byteorder)
+
+        # Then
+        self.assertEqual(format_string, expected)
+
+    def test__get_dtype_string_raises_value_error(self):
+        # Given
+        bits = 32
+        byteorder = 'L'
+
+        # When
+        with self.assertRaisesRegex(ValueError, 'Unsupported bit size'):
+            get_dtype_string(bits, byteorder)
+
+        # Given
+        bits = 16
+        byteorder = 'ABC123'
+
+        # When
+        with self.assertRaisesRegex(ValueError, 'Unsupported byteorder'):
+            get_dtype_string(bits, byteorder)
