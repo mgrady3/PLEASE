@@ -14,10 +14,17 @@ from please.constants import BITS_PER_BYTE
 from please.exceptions import UnsupportedDataType
 from please.io.utils import get_dtype_string, is_uview
 
-# UView Header in Bytes
+# How many bytes to read for each variable stored in the file header
+# Note: This is subject to change in future versions of UView
 UK_ID_LEN = 20
 UK_SIZE_LEN = 2
 UK_VERSION_LEN = 2
+BITS_PER_PIXEL = 2
+START_TIME = 8
+IMAGE_WDITH = 2
+IMAGE_HEIGHT = 2
+NUM_IMAGES = 2
+ALIGNMENT = 6
 
 
 def read_image_data(file_path: str) -> np.ndarray:
@@ -123,7 +130,7 @@ def read_raw_data(
     return np.frombuffer(image_data, format_string).reshape((height, width))
 
 
-def read_uview(file_path: str) -> np.ndarray:
+def read_uview(file_path: str, byteorder: str = 'L') -> np.ndarray:
     """ Attempt to read a UView (UKSOFT2001) image data file into a 2D numpy
     array containing the image contents by parsing the file header using
     known structure of the header contents
@@ -132,6 +139,8 @@ def read_uview(file_path: str) -> np.ndarray:
     ----------
     file_path : str
         Path to the file to read into an array
+
+    byteorder : str, optional
 
     Returns
     -------
@@ -158,6 +167,34 @@ def read_uview(file_path: str) -> np.ndarray:
             uk_id = struct.unpack(f'{UK_ID_LEN}s', f.read(UK_ID_LEN))[0]
             uk_size = struct.unpack('h', f.read(UK_SIZE_LEN))[0]
             uk_version = struct.unpack('h', f.read(UK_VERSION_LEN))[0]
+            bits_per_pixel = struct.unpack('h', f.read(BITS_PER_PIXEL))[0]
+            # Skip the next 6 bytes as they are unused space for alignment
+            f.read(ALIGNMENT)
+            start_time = struct.unpack('q', f.read(START_TIME))[0]
+            img_width = struct.unpack('h', f.read(IMAGE_WDITH))[0]
+            img_height = struct.unpack('h', f.read(IMAGE_HEIGHT))[0]
+            num_images = struct.unpack('h', f.read(NUM_IMAGES))[0]
         except struct.error:
             raise UnsupportedDataType("Could not read UView header.")
 
+        if num_images > 1:
+            # TODO: Figure out a way to unpack each image
+            raise UnsupportedDataType("Can not read multi-image file.")
+
+        # Now we have all the information needed to extract the image
+        # data from the file. We extract the image data from the end of the
+        # file as follows:
+        f.seek(0)
+        num_pixels = img_width * img_height
+        img_data_length_in_bytes = num_pixels * bits_per_pixel // BITS_PER_BYTE
+        all_data = f.read()
+
+    if len(all_data) < img_data_length_in_bytes:
+        raise UnsupportedDataType("Not enough data. Possibly compressed.")
+    header_len = len(all_data) - img_data_length_in_bytes
+
+    # Extract just the image section, discarding the header
+    img_data = all_data[header_len:]
+    format_string = get_dtype_string(bits_per_pixel, byteorder)
+    img_array = np.frombuffer(img_data, format_string)
+    return img_array.reshape((img_height, img_width))

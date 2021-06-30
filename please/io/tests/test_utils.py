@@ -108,7 +108,7 @@ class TestIOUtils(TestCase):
         # Then
         self.assertEqual(format_string, expected)
 
-    def test__get_dtype_string_raises_value_error(self):
+    def test_get_dtype_string_raises_value_error(self):
         # Given
         bits = 32
         byteorder = 'L'

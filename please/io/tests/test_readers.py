@@ -6,7 +6,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from please.io.readers import read_image_data, read_raw_data
+from please.io.readers import read_image_data, read_raw_data, read_uview
 
 
 class TestImageFileIO(TestCase):
@@ -73,3 +73,15 @@ class TestImageFileIO(TestCase):
 
         # Then
         self.assertIn(expected_error, str(ctx.exception))
+
+    def test_read_uview(self):
+        # Given
+        expected_height = 600
+        expected_width = 592
+
+        # When
+        data = read_uview(self.raw_data_file, byteorder='L')
+
+        # Then
+        self.assertIsInstance(data, np.ndarray)
+        self.assertEqual(data.shape, (expected_height, expected_width))
